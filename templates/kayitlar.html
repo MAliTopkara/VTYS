@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+
+{% block title %}Kayıtlar - Etkinlik Yönetim Sistemi{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12 d-flex justify-content-between align-items-center">
+        <h1 class="display-5">
+            <i class="bi bi-clipboard-check"></i> Kayıtlar
+        </h1>
+        <a href="/kayit_ekle" class="btn btn-info">
+            <i class="bi bi-clipboard-plus"></i> Yeni Kayıt Ekle
+        </a>
+    </div>
+</div>
+<p class="text-muted">Etkinliklere yapılan katılımcı kayıtları</p>
+
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Kayıt ID</th>
+                        <th>Etkinlik</th>
+                        <th>Katılımcı</th>
+                        <th>Kayıt Tarihi</th>
+                        <th>Durum</th>
+                        <th>Katılım</th>
+                        <th>İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for kayit in kayitlar %}
+                    <tr>
+                        <td>{{ kayit.kayit_id }}</td>
+                        <td><strong>{{ kayit.etkinlik_adi }}</strong></td>
+                        <td><i class="bi bi-person"></i> {{ kayit.ad_soyad }}</td>
+                        <td>{{ kayit.kayit_tarihi.strftime('%d.%m.%Y %H:%M') }}</td>
+                        <td>
+                            {% if kayit.durum == 'Onaylandı' %}
+                            <span class="badge bg-success">{{ kayit.durum }}</span>
+                            {% elif kayit.durum == 'Beklemede' %}
+                            <span class="badge bg-warning">{{ kayit.durum }}</span>
+                            {% else %}
+                            <span class="badge bg-danger">{{ kayit.durum }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if kayit.katilim_durumu == 'Katıldı' %}
+                            <span class="badge bg-success"><i class="bi bi-check-circle"></i> Katıldı</span>
+                            {% elif kayit.katilim_durumu == 'Katılmadı' %}
+                            <span class="badge bg-danger"><i class="bi bi-x-circle"></i> Katılmadı</span>
+                            {% else %}
+                            <span class="badge bg-secondary"><i class="bi bi-question-circle"></i> Belirsiz</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="/kayit_sil/{{ kayit.kayit_id }}" class="btn btn-sm btn-danger"
+                                onclick="return confirm('Bu kaydı silmek istediğinizden emin misiniz?')">
+                                <i class="bi bi-trash"></i> Sil
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

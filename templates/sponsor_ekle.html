@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+
+{% block title %}Sponsor Ekle - Etkinlik Yönetim Sistemi{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1 class="display-5">
+            <i class="bi bi-star-fill"></i> Yeni Sponsor Ekle
+        </h1>
+        <a href="/sponsorlar" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Geri Dön
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">Sponsor Adı *</label>
+                        <input type="text" name="sponsor_adi" class="form-control" required>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" name="iletisim_email" class="form-control">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Telefon</label>
+                            <input type="text" name="iletisim_telefon" class="form-control">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Web Sitesi</label>
+                            <input type="text" name="web_sitesi" class="form-control" placeholder="www.sponsor.com">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Sektör</label>
+                            <input type="text" name="sektor" class="form-control" placeholder="Teknoloji">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Açıklama</label>
+                        <textarea name="aciklama" class="form-control" rows="3"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-warning">
+                        <i class="bi bi-save"></i> Kaydet
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

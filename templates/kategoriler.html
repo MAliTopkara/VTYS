@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+
+{% block title %}Kategoriler - Etkinlik Yönetim Sistemi{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12 d-flex justify-content-between align-items-center">
+        <h1 class="display-5">
+            <i class="bi bi-tags"></i> Kategoriler
+        </h1>
+        <a href="/kategori_ekle" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Yeni Kategori Ekle
+        </a>
+    </div>
+</div>
+
+<div class="row g-4">
+    {% for kategori in kategoriler %}
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-tag-fill text-primary"></i> {{ kategori.kategori_adi }}
+                </h5>
+                <p class="card-text text-muted">{{ kategori.aciklama }}</p>
+                <small class="text-muted">
+                    <i class="bi bi-clock"></i> {{ kategori.olusturma_tarihi.strftime('%d.%m.%Y') }}
+                </small>
+            </div>
+            <div class="card-footer bg-transparent">
+                <a href="/kategori_guncelle/{{ kategori.kategori_id }}" class="btn btn-sm btn-warning">
+                    <i class="bi bi-pencil"></i> Güncelle
+                </a>
+                <a href="/kategori_sil/{{ kategori.kategori_id }}" class="btn btn-sm btn-danger"
+                    onclick="return confirm('Bu kategoriyi silmek istediğinizden emin misiniz?')">
+                    <i class="bi bi-trash"></i> Sil
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

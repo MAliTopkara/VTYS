@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+
+{% block title %}Sponsor Güncelle - Etkinlik Yönetim Sistemi{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1 class="display-5">
+            <i class="bi bi-pencil"></i> Sponsor Güncelle
+        </h1>
+        <a href="/sponsorlar" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Geri Dön
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">Sponsor Adı *</label>
+                        <input type="text" name="sponsor_adi" class="form-control" value="{{ sponsor.sponsor_adi }}"
+                            required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">İletişim Email *</label>
+                        <input type="email" name="iletisim_email" class="form-control"
+                            value="{{ sponsor.iletisim_email }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">İletişim Telefon</label>
+                        <input type="text" name="iletisim_telefon" class="form-control"
+                            value="{{ sponsor.iletisim_telefon }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Web Sitesi</label>
+                        <input type="text" name="web_sitesi" class="form-control" value="{{ sponsor.web_sitesi }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Sektör</label>
+                        <input type="text" name="sektor" class="form-control" value="{{ sponsor.sektor }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Açıklama</label>
+                        <textarea name="aciklama" class="form-control" rows="4">{{ sponsor.aciklama }}</textarea>
+                    </div>
+                    <button type="submit" class="btn btn-warning">
+                        <i class="bi bi-save"></i> Güncelle
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

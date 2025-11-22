@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+
+{% block title %}Ana Sayfa - Etkinlik Yönetim Sistemi{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1 class="display-4">
+            <i class="bi bi-speedometer2"></i> Dashboard
+        </h1>
+        <p class="lead">Etkinlik Yönetim Sistemi - Genel Bakış</p>
+    </div>
+</div>
+
+<!-- İstatistik Kartları -->
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="card stat-card bg-gradient">
+            <div class="card-body">
+                <i class="bi bi-calendar-event stat-number text-primary"></i>
+                <h2 class="stat-number">{{ etkinlik_sayisi }}</h2>
+                <p class="text-muted mb-0">Toplam Etkinlik</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card stat-card">
+            <div class="card-body">
+                <i class="bi bi-people stat-number text-success"></i>
+                <h2 class="stat-number text-success">{{ katilimci_sayisi }}</h2>
+                <p class="text-muted mb-0">Toplam Katılımcı</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card stat-card">
+            <div class="card-body">
+                <i class="bi bi-check-circle stat-number text-info"></i>
+                <h2 class="stat-number text-info">{{ kayit_sayisi }}</h2>
+                <p class="text-muted mb-0">Toplam Kayıt</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Hızlı Erişim -->
+<div class="row g-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-calendar-event"></i> Etkinlikler</h5>
+                <p class="card-text">Tüm etkinlikleri görüntüleyin, yeni etkinlik ekleyin.</p>
+                <a href="/etkinlikler" class="btn btn-primary">
+                    <i class="bi bi-arrow-right"></i> Etkinliklere Git
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-people"></i> Katılımcılar</h5>
+                <p class="card-text">Katılımcı listesini görüntüleyin ve yönetin.</p>
+                <a href="/katilimcilar" class="btn btn-success">
+                    <i class="bi bi-arrow-right"></i> Katılımcılara Git
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

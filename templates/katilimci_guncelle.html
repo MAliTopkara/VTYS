@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+
+{% block title %}Katılımcı Güncelle - Etkinlik Yönetim Sistemi{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1 class="display-5">
+            <i class="bi bi-pencil"></i> Katılımcı Güncelle
+        </h1>
+        <a href="/katilimcilar" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Geri Dön
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">Ad Soyad *</label>
+                        <input type="text" name="ad_soyad" class="form-control" value="{{ katilimci.ad_soyad }}"
+                            required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Email *</label>
+                        <input type="email" name="email" class="form-control" value="{{ katilimci.email }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Telefon *</label>
+                        <input type="text" name="telefon" class="form-control" value="{{ katilimci.telefon }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Doğum Tarihi</label>
+                        <input type="date" name="dogum_tarihi" class="form-control"
+                            value="{{ katilimci.dogum_tarihi.strftime('%Y-%m-%d') if katilimci.dogum_tarihi else '' }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Cinsiyet *</label>
+                        <select name="cinsiyet" class="form-select" required>
+                            <option value="Erkek" {% if katilimci.cinsiyet=='Erkek' %}selected{% endif %}>Erkek</option>
+                            <option value="Kadın" {% if katilimci.cinsiyet=='Kadın' %}selected{% endif %}>Kadın</option>
+                            <option value="Diğer" {% if katilimci.cinsiyet=='Diğer' %}selected{% endif %}>Diğer</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Şehir</label>
+                        <input type="text" name="sehir" class="form-control" value="{{ katilimci.sehir }}">
+                    </div>
+                    <button type="submit" class="btn btn-warning">
+                        <i class="bi bi-save"></i> Güncelle
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

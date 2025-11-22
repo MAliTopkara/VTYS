@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+
+{% block title %}Mekan Ekle - Etkinlik Yönetim Sistemi{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1 class="display-5">
+            <i class="bi bi-geo-alt-fill"></i> Yeni Mekan Ekle
+        </h1>
+        <a href="/mekanlar" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Geri Dön
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">Mekan Adı *</label>
+                        <input type="text" name="mekan_adi" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Adres *</label>
+                        <textarea name="adres" class="form-control" rows="3" required></textarea>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Şehir *</label>
+                            <input type="text" name="sehir" class="form-control" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Kapasite *</label>
+                            <input type="number" name="kapasite" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">İletişim Telefon</label>
+                        <input type="text" name="iletisim_telefon" class="form-control">
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-save"></i> Kaydet
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
