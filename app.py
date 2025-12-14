@@ -1,6 +1,8 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, session
 from flask_mysqldb import MySQL
 from config import Config
+from functools import wraps
+import hashlib
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -8,8 +10,118 @@ app.config.from_object(Config)
 # MySQL bağlantısı
 mysql = MySQL(app)
 
+# Login Required Decorator
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'kullanici_id' not in session:
+            flash('Bu sayfaya erişmek için giriş yapmalısınız!', 'warning')
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+# Admin Required Decorator
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'kullanici_id' not in session:
+            flash('Bu sayfaya erişmek için giriş yapmalısınız!', 'warning')
+            return redirect(url_for('login'))
+        if session.get('rol') != 'Admin':
+            flash('Bu işlem için yetkiniz yok!', 'danger')
+            return redirect(request.referrer or url_for('index'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+# ============================================
+# GİRİŞ VE ÇIKIŞ İŞLEMLERİ
+# ============================================
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        email = request.form['email']
+        sifre = request.form['sifre']
+        
+        cur = mysql.connection.cursor()
+        cur.execute("SELECT * FROM kullanicilar WHERE email = %s", [email])
+        kullanici = cur.fetchone()
+        cur.close()
+        
+        # MD5 ile şifre hashleme
+        hashed_password = hashlib.md5(sifre.encode()).hexdigest()
+        
+        if kullanici and kullanici['sifre'] == hashed_password:
+            # Session'a kullanıcı bilgilerini kaydet
+            session['kullanici_id'] = kullanici['kullanici_id']
+            session['email'] = kullanici['email']
+            session['ad_soyad'] = kullanici['ad_soyad']
+            session['rol'] = kullanici['rol']
+            
+            flash(f'Hoş geldiniz, {kullanici["ad_soyad"]}!', 'success')
+            return redirect(url_for('index'))
+        else:
+            flash('Email veya şifre hatalı!', 'danger')
+            return redirect(url_for('login'))
+    
+    return render_template('login.html')
+
+# Logout
+@app.route('/logout')
+def logout():
+    session.clear()
+    flash('Başarıyla çıkış yaptınız!', 'success')
+    return redirect(url_for('login'))
+
+# Register
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        ad_soyad = request.form['ad_soyad']
+        email = request.form['email']
+        telefon = request.form.get('telefon', '')
+        sifre = request.form['sifre']
+        sifre_tekrar = request.form['sifre_tekrar']
+        dogum_tarihi = request.form.get('dogum_tarihi', None)
+        sehir = request.form.get('sehir', '')
+        
+        # Şifre eşleşme kontrolü
+        if sifre != sifre_tekrar:
+            flash('Şifreler eşleşmiyor!', 'danger')
+            return redirect(url_for('register'))
+        
+        cur = mysql.connection.cursor()
+        
+        # Email benzersizlik kontrolü
+        cur.execute("SELECT * FROM kullanicilar WHERE email = %s", [email])
+        if cur.fetchone():
+            flash('Bu email adresi zaten kullanılıyor!', 'danger')
+            cur.close()
+            return redirect(url_for('register'))
+        
+        # MD5 ile şifre hashleme
+        hashed_password = hashlib.md5(sifre.encode()).hexdigest()
+        
+        # Kullanıcıyı kullanicilar tablosuna ekle
+        cur.execute("""
+            INSERT INTO kullanicilar (ad_soyad, email, sifre, rol) 
+            VALUES (%s, %s, %s, 'Kullanici')
+        """, (ad_soyad, email, hashed_password))
+        mysql.connection.commit()
+        cur.close()
+        
+        flash('Kayıt başarılı! Giriş yapabilirsiniz.', 'success')
+        return redirect(url_for('login'))
+    
+    return render_template('register.html')
+
+# ============================================
+# ANA SAYFALAR
+# ============================================
+
 # Ana Sayfa
 @app.route('/')
+@login_required
 def index():
     cur = mysql.connection.cursor()
     
@@ -32,6 +144,7 @@ def index():
 
 # Etkinlikler Sayfası
 @app.route('/etkinlikler')
+@login_required
 def etkinlikler():
     cur = mysql.connection.cursor()
     cur.execute("""
@@ -55,6 +168,7 @@ def etkinlikler():
 
 # Kategoriler Sayfası
 @app.route('/kategoriler')
+@login_required
 def kategoriler():
     cur = mysql.connection.cursor()
     cur.execute("SELECT * FROM kategoriler ORDER BY kategori_adi")
@@ -65,6 +179,7 @@ def kategoriler():
 
 # Katılımcılar Sayfası
 @app.route('/katilimcilar')
+@login_required
 def katilimcilar():
     cur = mysql.connection.cursor()
     cur.execute("SELECT * FROM katilimcilar ORDER BY ad_soyad")
@@ -75,6 +190,7 @@ def katilimcilar():
 
 # Mekanlar Sayfası
 @app.route('/mekanlar')
+@login_required
 def mekanlar():
     cur = mysql.connection.cursor()
     cur.execute("SELECT * FROM mekanlar ORDER BY sehir, mekan_adi")
@@ -85,6 +201,7 @@ def mekanlar():
 
 # Sponsorlar Sayfası
 @app.route('/sponsorlar')
+@login_required
 def sponsorlar():
     cur = mysql.connection.cursor()
     cur.execute("SELECT * FROM sponsorlar ORDER BY sponsor_adi")
@@ -95,6 +212,7 @@ def sponsorlar():
 
 # Kayıtlar Sayfası
 @app.route('/kayitlar')
+@login_required
 def kayitlar():
     cur = mysql.connection.cursor()
     cur.execute("""
@@ -121,6 +239,8 @@ def kayitlar():
 
 # Kategori Ekleme
 @app.route('/kategori_ekle', methods=['GET', 'POST'])
+@login_required
+@admin_required
 def kategori_ekle():
     if request.method == 'POST':
         kategori_adi = request.form['kategori_adi']
@@ -139,6 +259,8 @@ def kategori_ekle():
 
 # Katılımcı Ekleme
 @app.route('/katilimci_ekle', methods=['GET', 'POST'])
+@login_required
+@admin_required
 def katilimci_ekle():
     if request.method == 'POST':
         ad_soyad = request.form['ad_soyad']
@@ -163,6 +285,8 @@ def katilimci_ekle():
 
 # Mekan Ekleme
 @app.route('/mekan_ekle', methods=['GET', 'POST'])
+@login_required
+@admin_required
 def mekan_ekle():
     if request.method == 'POST':
         mekan_adi = request.form['mekan_adi']
@@ -186,6 +310,8 @@ def mekan_ekle():
 
 # Sponsor Ekleme
 @app.route('/sponsor_ekle', methods=['GET', 'POST'])
+@login_required
+@admin_required
 def sponsor_ekle():
     if request.method == 'POST':
         sponsor_adi = request.form['sponsor_adi']
@@ -210,6 +336,8 @@ def sponsor_ekle():
 
 # Etkinlik Ekleme
 @app.route('/etkinlik_ekle', methods=['GET', 'POST'])
+@login_required
+@admin_required
 def etkinlik_ekle():
     cur = mysql.connection.cursor()
     
@@ -249,6 +377,8 @@ def etkinlik_ekle():
 
 # Kayıt Ekleme (Etkinlik-Katılımcı)
 @app.route('/kayit_ekle', methods=['GET', 'POST'])
+@login_required
+@admin_required
 def kayit_ekle():
     cur = mysql.connection.cursor()
     
@@ -283,6 +413,8 @@ def kayit_ekle():
 
 # Kategori Silme
 @app.route('/kategori_sil/<int:id>')
+@login_required
+@admin_required
 def kategori_sil(id):
     cur = mysql.connection.cursor()
     cur.execute("DELETE FROM kategoriler WHERE kategori_id = %s", [id])
@@ -293,6 +425,8 @@ def kategori_sil(id):
 
 # Katılımcı Silme
 @app.route('/katilimci_sil/<int:id>')
+@login_required
+@admin_required
 def katilimci_sil(id):
     cur = mysql.connection.cursor()
     cur.execute("DELETE FROM katilimcilar WHERE katilimci_id = %s", [id])
@@ -303,6 +437,8 @@ def katilimci_sil(id):
 
 # Mekan Silme
 @app.route('/mekan_sil/<int:id>')
+@login_required
+@admin_required
 def mekan_sil(id):
     cur = mysql.connection.cursor()
     cur.execute("DELETE FROM mekanlar WHERE mekan_id = %s", [id])
@@ -313,6 +449,8 @@ def mekan_sil(id):
 
 # Sponsor Silme
 @app.route('/sponsor_sil/<int:id>')
+@login_required
+@admin_required
 def sponsor_sil(id):
     cur = mysql.connection.cursor()
     cur.execute("DELETE FROM sponsorlar WHERE sponsor_id = %s", [id])
@@ -323,6 +461,8 @@ def sponsor_sil(id):
 
 # Etkinlik Silme
 @app.route('/etkinlik_sil/<int:id>')
+@login_required
+@admin_required
 def etkinlik_sil(id):
     cur = mysql.connection.cursor()
     cur.execute("DELETE FROM etkinlikler WHERE etkinlik_id = %s", [id])
@@ -333,6 +473,8 @@ def etkinlik_sil(id):
 
 # Kayıt Silme
 @app.route('/kayit_sil/<int:id>')
+@login_required
+@admin_required
 def kayit_sil(id):
     cur = mysql.connection.cursor()
     cur.execute("DELETE FROM kayitlar WHERE kayit_id = %s", [id])
@@ -347,6 +489,8 @@ def kayit_sil(id):
 
 # Kategori Güncelleme
 @app.route('/kategori_guncelle/<int:id>', methods=['GET', 'POST'])
+@login_required
+@admin_required
 def kategori_guncelle(id):
     cur = mysql.connection.cursor()
     
@@ -370,6 +514,8 @@ def kategori_guncelle(id):
 
 # Katılımcı Güncelleme
 @app.route('/katilimci_guncelle/<int:id>', methods=['GET', 'POST'])
+@login_required
+@admin_required
 def katilimci_guncelle(id):
     cur = mysql.connection.cursor()
     
@@ -400,6 +546,8 @@ def katilimci_guncelle(id):
 
 # Mekan Güncelleme
 @app.route('/mekan_guncelle/<int:id>', methods=['GET', 'POST'])
+@login_required
+@admin_required
 def mekan_guncelle(id):
     cur = mysql.connection.cursor()
     
@@ -429,6 +577,8 @@ def mekan_guncelle(id):
 
 # Sponsor Güncelleme
 @app.route('/sponsor_guncelle/<int:id>', methods=['GET', 'POST'])
+@login_required
+@admin_required
 def sponsor_guncelle(id):
     cur = mysql.connection.cursor()
     
@@ -460,6 +610,8 @@ def sponsor_guncelle(id):
 
 # Etkinlik Güncelleme
 @app.route('/etkinlik_guncelle/<int:id>', methods=['GET', 'POST'])
+@login_required
+@admin_required
 def etkinlik_guncelle(id):
     cur = mysql.connection.cursor()
     
