@@ -9,6 +9,8 @@ const Mekanlar = () => {
     const [message, setMessage] = useState('');
     const [showModal, setShowModal] = useState(false);
     const [formLoading, setFormLoading] = useState(false);
+    const [editMode, setEditMode] = useState(false);
+    const [selectedId, setSelectedId] = useState(null);
     const { isAdmin } = useAuth();
 
     const [formData, setFormData] = useState({
@@ -16,6 +18,7 @@ const Mekanlar = () => {
         adres: '',
         sehir: '',
         kapasite: '',
+        harita_link: '',
         iletisim_telefon: ''
     });
 
@@ -61,27 +64,50 @@ const Mekanlar = () => {
         setFormLoading(true);
 
         try {
-            const response = await mekanService.create(formData);
+            let response;
+            if (editMode) {
+                response = await mekanService.update(selectedId, formData);
+            } else {
+                response = await mekanService.create(formData);
+            }
+
             if (response.data.success) {
-                setMessage('Mekan başarıyla eklendi!');
+                setMessage(editMode ? 'Mekan başarıyla güncellendi!' : 'Mekan başarıyla eklendi!');
                 setShowModal(false);
                 resetForm();
                 fetchMekanlar();
             }
         } catch (err) {
-            console.error('Mekan ekleme hatası:', err);
+            console.error('Mekan işlem hatası:', err);
             setError('Hata oluştu: ' + (err.response?.data?.message || err.message));
         } finally {
             setFormLoading(false);
         }
     };
 
+    const handleEdit = (mekan) => {
+        setEditMode(true);
+        setSelectedId(mekan.mekan_id);
+        setFormData({
+            mekan_adi: mekan.mekan_adi,
+            adres: mekan.adres || '',
+            sehir: mekan.sehir,
+            kapasite: mekan.kapasite,
+            harita_link: mekan.harita_link || '',
+            iletisim_telefon: mekan.iletisim_telefon || ''
+        });
+        setShowModal(true);
+    };
+
     const resetForm = () => {
+        setEditMode(false);
+        setSelectedId(null);
         setFormData({
             mekan_adi: '',
             adres: '',
             sehir: '',
             kapasite: '',
+            harita_link: '',
             iletisim_telefon: ''
         });
     };
@@ -159,6 +185,12 @@ const Mekanlar = () => {
                                         {isAdmin && (
                                             <td>
                                                 <button
+                                                    onClick={() => handleEdit(mekan)}
+                                                    className="btn btn-sm btn-warning me-2"
+                                                >
+                                                    <i className="bi bi-pencil"></i> Düzenle
+                                                </button>
+                                                <button
                                                     onClick={() => handleDelete(mekan.mekan_id)}
                                                     className="btn btn-sm btn-danger"
                                                 >
@@ -184,7 +216,7 @@ const Mekanlar = () => {
                         <div className="modal-content">
                             <div className="modal-header">
                                 <h5 className="modal-title">
-                                    <i className="bi bi-geo-alt"></i> Yeni Mekan Ekle
+                                    <i className={`bi ${editMode ? 'bi-pencil-square' : 'bi-geo-alt'}`}></i> {editMode ? 'Mekanı Düzenle' : 'Yeni Mekan Ekle'}
                                 </h5>
                                 <button type="button" className="btn-close" onClick={closeModal}></button>
                             </div>
@@ -230,6 +262,19 @@ const Mekanlar = () => {
                                                 placeholder="Örn: İstanbul"
                                             />
                                         </div>
+                                    </div>
+
+                                    <div className="mb-3">
+                                        <label htmlFor="harita_link" className="form-label">Harita Linki</label>
+                                        <input
+                                            type="text"
+                                            className="form-control"
+                                            id="harita_link"
+                                            name="harita_link"
+                                            value={formData.harita_link}
+                                            onChange={handleChange}
+                                            placeholder="Google Maps linki..."
+                                        />
                                     </div>
 
                                     <div className="row">

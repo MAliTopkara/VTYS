@@ -9,6 +9,8 @@ const Kategoriler = () => {
     const [message, setMessage] = useState('');
     const [showModal, setShowModal] = useState(false);
     const [formLoading, setFormLoading] = useState(false);
+    const [editMode, setEditMode] = useState(false);
+    const [selectedKategori, setSelectedKategori] = useState(null);
     const { isAdmin } = useAuth();
 
     const [formData, setFormData] = useState({
@@ -58,22 +60,40 @@ const Kategoriler = () => {
         setFormLoading(true);
 
         try {
-            const response = await kategoriService.create(formData);
+            let response;
+            if (editMode) {
+                response = await kategoriService.update(selectedKategori.kategori_id, formData);
+            } else {
+                response = await kategoriService.create(formData);
+            }
+
             if (response.data.success) {
-                setMessage('Kategori başarıyla eklendi!');
+                setMessage(editMode ? 'Kategori başarıyla güncellendi!' : 'Kategori başarıyla eklendi!');
                 setShowModal(false);
                 resetForm();
                 fetchKategoriler();
             }
         } catch (err) {
-            console.error('Kategori ekleme hatası:', err);
+            console.error('Kategori işlem hatası:', err);
             setError('Hata oluştu: ' + (err.response?.data?.message || err.message));
         } finally {
             setFormLoading(false);
         }
     };
 
+    const handleEdit = (kategori) => {
+        setEditMode(true);
+        setSelectedKategori(kategori);
+        setFormData({
+            kategori_adi: kategori.kategori_adi,
+            aciklama: kategori.aciklama || ''
+        });
+        setShowModal(true);
+    };
+
     const resetForm = () => {
+        setEditMode(false);
+        setSelectedKategori(null);
         setFormData({
             kategori_adi: '',
             aciklama: ''
@@ -147,6 +167,12 @@ const Kategoriler = () => {
                                         {isAdmin && (
                                             <td>
                                                 <button
+                                                    onClick={() => handleEdit(kategori)}
+                                                    className="btn btn-sm btn-warning me-2"
+                                                >
+                                                    <i className="bi bi-pencil"></i> Düzenle
+                                                </button>
+                                                <button
                                                     onClick={() => handleDelete(kategori.kategori_id)}
                                                     className="btn btn-sm btn-danger"
                                                 >
@@ -172,7 +198,7 @@ const Kategoriler = () => {
                         <div className="modal-content">
                             <div className="modal-header">
                                 <h5 className="modal-title">
-                                    <i className="bi bi-plus-circle"></i> Yeni Kategori Ekle
+                                    <i className={`bi ${editMode ? 'bi-pencil-square' : 'bi-plus-circle'}`}></i> {editMode ? 'Kategoriyi Düzenle' : 'Yeni Kategori Ekle'}
                                 </h5>
                                 <button type="button" className="btn-close" onClick={closeModal}></button>
                             </div>

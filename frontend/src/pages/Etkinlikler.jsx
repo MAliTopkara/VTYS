@@ -11,6 +11,8 @@ const Etkinlikler = () => {
     const [message, setMessage] = useState('');
     const [showModal, setShowModal] = useState(false);
     const [formLoading, setFormLoading] = useState(false);
+    const [editMode, setEditMode] = useState(false);
+    const [selectedEtkinlik, setSelectedEtkinlik] = useState(null);
     const { isAdmin } = useAuth();
 
     const [formData, setFormData] = useState({
@@ -90,22 +92,57 @@ const Etkinlikler = () => {
         setFormLoading(true);
 
         try {
-            const response = await etkinlikService.create(formData);
+            let response;
+            if (editMode) {
+                response = await etkinlikService.update(selectedEtkinlik.etkinlik_id, formData);
+            } else {
+                response = await etkinlikService.create(formData);
+            }
+
             if (response.data.success) {
-                setMessage('Etkinlik başarıyla eklendi!');
+                setMessage(editMode ? 'Etkinlik başarıyla güncellendi!' : 'Etkinlik başarıyla eklendi!');
                 setShowModal(false);
                 resetForm();
                 fetchEtkinlikler();
             }
         } catch (err) {
-            console.error('Etkinlik ekleme hatası:', err);
+            console.error('Etkinlik işlem hatası:', err);
             alert('Hata oluştu: ' + (err.response?.data?.message || err.message));
         } finally {
             setFormLoading(false);
         }
     };
 
+    const handleEdit = (etkinlik) => {
+        setEditMode(true);
+        setSelectedEtkinlik(etkinlik);
+
+        // Tarih formatını input type="datetime-local" için ayarla (YYYY-MM-DDTHH:MM)
+        const formatDateForInput = (dateStr) => {
+            if (!dateStr) return '';
+            const date = new Date(dateStr);
+            // Saat dilimi düzeltmesi (Türkiye +3)
+            date.setHours(date.getHours() + 3);
+            return date.toISOString().slice(0, 16);
+        };
+
+        setFormData({
+            etkinlik_adi: etkinlik.etkinlik_adi,
+            aciklama: etkinlik.aciklama || '',
+            baslangic_tarihi: formatDateForInput(etkinlik.baslangic_tarihi),
+            bitis_tarihi: formatDateForInput(etkinlik.bitis_tarihi),
+            kontenjan: etkinlik.kontenjan,
+            kategori_id: etkinlik.kategori_id,
+            mekan_id: etkinlik.mekan_id,
+            durum: etkinlik.durum
+        });
+
+        setShowModal(true);
+    };
+
     const resetForm = () => {
+        setEditMode(false);
+        setSelectedEtkinlik(null);
         setFormData({
             etkinlik_adi: '',
             aciklama: '',
@@ -218,6 +255,12 @@ const Etkinlikler = () => {
                                         {isAdmin && (
                                             <td>
                                                 <button
+                                                    onClick={() => handleEdit(etkinlik)}
+                                                    className="btn btn-sm btn-warning me-2"
+                                                >
+                                                    <i className="bi bi-pencil"></i> Düzenle
+                                                </button>
+                                                <button
                                                     onClick={() => handleDelete(etkinlik.etkinlik_id)}
                                                     className="btn btn-sm btn-danger"
                                                 >
@@ -243,7 +286,7 @@ const Etkinlikler = () => {
                         <div className="modal-content">
                             <div className="modal-header">
                                 <h5 className="modal-title">
-                                    <i className="bi bi-calendar-plus"></i> Yeni Etkinlik Ekle
+                                    <i className={`bi ${editMode ? 'bi-pencil-square' : 'bi-calendar-plus'}`}></i> {editMode ? 'Etkinliği Düzenle' : 'Yeni Etkinlik Ekle'}
                                 </h5>
                                 <button type="button" className="btn-close" onClick={closeModal}></button>
                             </div>

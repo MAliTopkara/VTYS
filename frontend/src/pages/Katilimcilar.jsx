@@ -9,6 +9,8 @@ const Katilimcilar = () => {
     const [message, setMessage] = useState('');
     const [showModal, setShowModal] = useState(false);
     const [formLoading, setFormLoading] = useState(false);
+    const [editMode, setEditMode] = useState(false);
+    const [selectedId, setSelectedId] = useState(null);
     const { isAdmin } = useAuth();
 
     const [formData, setFormData] = useState({
@@ -60,22 +62,42 @@ const Katilimcilar = () => {
         setFormLoading(true);
 
         try {
-            const response = await katilimciService.create(formData);
+            let response;
+            if (editMode) {
+                response = await katilimciService.update(selectedId, formData);
+            } else {
+                response = await katilimciService.create(formData);
+            }
+
             if (response.data.success) {
-                setMessage('Katılımcı başarıyla eklendi!');
+                setMessage(editMode ? 'Katılımcı başarıyla güncellendi!' : 'Katılımcı başarıyla eklendi!');
                 setShowModal(false);
                 resetForm();
                 fetchKatilimcilar();
             }
         } catch (err) {
-            console.error('Katılımcı ekleme hatası:', err);
+            console.error('Katılımcı işlem hatası:', err);
             setError('Hata oluştu: ' + (err.response?.data?.message || err.message));
         } finally {
             setFormLoading(false);
         }
     };
 
+    const handleEdit = (katilimci) => {
+        setEditMode(true);
+        setSelectedId(katilimci.katilimci_id);
+        setFormData({
+            ad_soyad: katilimci.ad_soyad,
+            email: katilimci.email || '',
+            telefon: katilimci.telefon || '',
+            sehir: katilimci.sehir || ''
+        });
+        setShowModal(true);
+    };
+
     const resetForm = () => {
+        setEditMode(false);
+        setSelectedId(null);
         setFormData({
             ad_soyad: '',
             email: '',
@@ -155,6 +177,12 @@ const Katilimcilar = () => {
                                         {isAdmin && (
                                             <td>
                                                 <button
+                                                    onClick={() => handleEdit(katilimci)}
+                                                    className="btn btn-sm btn-warning me-2"
+                                                >
+                                                    <i className="bi bi-pencil"></i> Düzenle
+                                                </button>
+                                                <button
                                                     onClick={() => handleDelete(katilimci.katilimci_id)}
                                                     className="btn btn-sm btn-danger"
                                                 >
@@ -180,7 +208,7 @@ const Katilimcilar = () => {
                         <div className="modal-content">
                             <div className="modal-header">
                                 <h5 className="modal-title">
-                                    <i className="bi bi-person-plus"></i> Yeni Katılımcı Ekle
+                                    <i className={`bi ${editMode ? 'bi-person-gear' : 'bi-person-plus'}`}></i> {editMode ? 'Katılımcıyı Düzenle' : 'Yeni Katılımcı Ekle'}
                                 </h5>
                                 <button type="button" className="btn-close" onClick={closeModal}></button>
                             </div>

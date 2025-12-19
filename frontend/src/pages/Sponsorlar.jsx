@@ -9,10 +9,13 @@ const Sponsorlar = () => {
     const [message, setMessage] = useState('');
     const [showModal, setShowModal] = useState(false);
     const [formLoading, setFormLoading] = useState(false);
+    const [editMode, setEditMode] = useState(false);
+    const [selectedId, setSelectedId] = useState(null);
     const { isAdmin } = useAuth();
 
     const [formData, setFormData] = useState({
         sponsor_adi: '',
+        tutar: '',
         iletisim_email: '',
         iletisim_telefon: '',
         web_sitesi: '',
@@ -62,24 +65,48 @@ const Sponsorlar = () => {
         setFormLoading(true);
 
         try {
-            const response = await sponsorService.create(formData);
+            let response;
+            if (editMode) {
+                response = await sponsorService.update(selectedId, formData);
+            } else {
+                response = await sponsorService.create(formData);
+            }
+
             if (response.data.success) {
-                setMessage('Sponsor başarıyla eklendi!');
+                setMessage(editMode ? 'Sponsor başarıyla güncellendi!' : 'Sponsor başarıyla eklendi!');
                 setShowModal(false);
                 resetForm();
                 fetchSponsorlar();
             }
         } catch (err) {
-            console.error('Sponsor ekleme hatası:', err);
+            console.error('Sponsor işlem hatası:', err);
             setError('Hata oluştu: ' + (err.response?.data?.message || err.message));
         } finally {
             setFormLoading(false);
         }
     };
 
+    const handleEdit = (sponsor) => {
+        setEditMode(true);
+        setSelectedId(sponsor.sponsor_id);
+        setFormData({
+            sponsor_adi: sponsor.sponsor_adi,
+            tutar: sponsor.tutar || '',
+            iletisim_email: sponsor.iletisim_email || '',
+            iletisim_telefon: sponsor.iletisim_telefon || '',
+            web_sitesi: sponsor.web_sitesi || '',
+            sektor: sponsor.sektor || '',
+            aciklama: sponsor.aciklama || ''
+        });
+        setShowModal(true);
+    };
+
     const resetForm = () => {
+        setEditMode(false);
+        setSelectedId(null);
         setFormData({
             sponsor_adi: '',
+            tutar: '',
             iletisim_email: '',
             iletisim_telefon: '',
             web_sitesi: '',
@@ -167,6 +194,12 @@ const Sponsorlar = () => {
                                         {isAdmin && (
                                             <td>
                                                 <button
+                                                    onClick={() => handleEdit(sponsor)}
+                                                    className="btn btn-sm btn-warning me-2"
+                                                >
+                                                    <i className="bi bi-pencil"></i> Düzenle
+                                                </button>
+                                                <button
                                                     onClick={() => handleDelete(sponsor.sponsor_id)}
                                                     className="btn btn-sm btn-danger"
                                                 >
@@ -192,7 +225,7 @@ const Sponsorlar = () => {
                         <div className="modal-content">
                             <div className="modal-header">
                                 <h5 className="modal-title">
-                                    <i className="bi bi-star"></i> Yeni Sponsor Ekle
+                                    <i className={`bi ${editMode ? 'bi-pencil-square' : 'bi-star'}`}></i> {editMode ? 'Sponsoru Düzenle' : 'Yeni Sponsor Ekle'}
                                 </h5>
                                 <button type="button" className="btn-close" onClick={closeModal}></button>
                             </div>
@@ -212,6 +245,21 @@ const Sponsorlar = () => {
                                                 placeholder="Örn: ABC Teknoloji A.Ş."
                                             />
                                         </div>
+                                        <div className="col-md-6 mb-3">
+                                            <label htmlFor="tutar" className="form-label">Sponsorluk Tutarı</label>
+                                            <input
+                                                type="number"
+                                                className="form-control"
+                                                id="tutar"
+                                                name="tutar"
+                                                value={formData.tutar}
+                                                onChange={handleChange}
+                                                placeholder="Örn: 50000"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="row">
                                         <div className="col-md-6 mb-3">
                                             <label htmlFor="sektor" className="form-label">Sektör</label>
                                             <input
@@ -256,13 +304,13 @@ const Sponsorlar = () => {
                                     <div className="mb-3">
                                         <label htmlFor="web_sitesi" className="form-label">Web Sitesi</label>
                                         <input
-                                            type="url"
+                                            type="text"
                                             className="form-control"
                                             id="web_sitesi"
                                             name="web_sitesi"
                                             value={formData.web_sitesi}
                                             onChange={handleChange}
-                                            placeholder="Örn: https://www.firma.com"
+                                            placeholder="Örn: www.firma.com"
                                         />
                                     </div>
 

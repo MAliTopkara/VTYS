@@ -9,6 +9,8 @@ router.get('/', loginRequired, async (req, res) => {
         const [rows] = await pool.query(`
             SELECT 
                 k.kayit_id,
+                k.etkinlik_id,
+                k.katilimci_id,
                 e.etkinlik_adi,
                 kat.ad_soyad,
                 k.kayit_tarihi,

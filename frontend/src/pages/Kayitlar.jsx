@@ -11,6 +11,8 @@ const Kayitlar = () => {
     const [message, setMessage] = useState('');
     const [showModal, setShowModal] = useState(false);
     const [formLoading, setFormLoading] = useState(false);
+    const [editMode, setEditMode] = useState(false);
+    const [selectedId, setSelectedId] = useState(null);
     const { isAdmin } = useAuth();
 
     const [formData, setFormData] = useState({
@@ -85,22 +87,41 @@ const Kayitlar = () => {
         setFormLoading(true);
 
         try {
-            const response = await kayitService.create(formData);
+            let response;
+            if (editMode) {
+                response = await kayitService.update(selectedId, formData);
+            } else {
+                response = await kayitService.create(formData);
+            }
+
             if (response.data.success) {
-                setMessage('Kayıt başarıyla eklendi!');
+                setMessage(editMode ? 'Kayıt başarıyla güncellendi!' : 'Kayıt başarıyla eklendi!');
                 setShowModal(false);
                 resetForm();
                 fetchKayitlar();
             }
         } catch (err) {
-            console.error('Kayıt ekleme hatası:', err);
+            console.error('Kayıt işlem hatası:', err);
             setError('Hata oluştu: ' + (err.response?.data?.message || err.message));
         } finally {
             setFormLoading(false);
         }
     };
 
+    const handleEdit = (kayit) => {
+        setEditMode(true);
+        setSelectedId(kayit.kayit_id);
+        setFormData({
+            etkinlik_id: kayit.etkinlik_id,
+            katilimci_id: kayit.katilimci_id,
+            durum: kayit.durum
+        });
+        setShowModal(true);
+    };
+
     const resetForm = () => {
+        setEditMode(false);
+        setSelectedId(null);
         setFormData({
             etkinlik_id: '',
             katilimci_id: '',
@@ -212,6 +233,12 @@ const Kayitlar = () => {
                                         {isAdmin && (
                                             <td>
                                                 <button
+                                                    onClick={() => handleEdit(kayit)}
+                                                    className="btn btn-sm btn-warning me-2"
+                                                >
+                                                    <i className="bi bi-pencil"></i> Düzenle
+                                                </button>
+                                                <button
                                                     onClick={() => handleDelete(kayit.kayit_id)}
                                                     className="btn btn-sm btn-danger"
                                                 >
@@ -237,7 +264,7 @@ const Kayitlar = () => {
                         <div className="modal-content">
                             <div className="modal-header">
                                 <h5 className="modal-title">
-                                    <i className="bi bi-ticket-perforated"></i> Yeni Kayıt Ekle
+                                    <i className={`bi ${editMode ? 'bi-pencil-square' : 'bi-ticket-perforated'}`}></i> {editMode ? 'Kaydı Düzenle' : 'Yeni Kayıt Ekle'}
                                 </h5>
                                 <button type="button" className="btn-close" onClick={closeModal}></button>
                             </div>
