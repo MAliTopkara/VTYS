@@ -12,12 +12,36 @@ export const AuthProvider = ({ children }) => {
     }, []);
 
     const checkAuth = async () => {
+        console.log('AuthContext: checkAuth triggered');
         try {
+            // Önce localStorage'da token var mı kontrol et
+            const token = localStorage.getItem('token');
+            console.log('AuthContext: localStorage token:', token);
+
+            if (!token) {
+                console.log('AuthContext: No token, setting user null');
+                setUser(null);
+                setLoading(false);
+                return;
+            }
+
+            // Token varsa API'den kullanıcı bilgilerini al
+            console.log('AuthContext: Calling authService.getMe');
             const response = await authService.getMe();
+            console.log('AuthContext: getMe response:', response);
+
             if (response.data.success) {
+                console.log('AuthContext: getMe success, setting user', response.data.user);
                 setUser(response.data.user);
+            } else {
+                console.warn('AuthContext: getMe failed', response.data);
+                setUser(null);
             }
         } catch (error) {
+            console.error('AuthContext: checkAuth error', error);
+            // Token geçersizse temizle
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
             setUser(null);
         } finally {
             setLoading(false);
@@ -25,14 +49,17 @@ export const AuthProvider = ({ children }) => {
     };
 
     const login = async (email, sifre) => {
+        console.log('AuthContext: login triggered');
         const response = await authService.login(email, sifre);
         if (response.data.success) {
+            console.log('AuthContext: login success, setting user', response.data.user);
             setUser(response.data.user);
         }
         return response;
     };
 
     const logout = async () => {
+        console.log('AuthContext: logout triggered');
         await authService.logout();
         setUser(null);
     };
@@ -43,7 +70,7 @@ export const AuthProvider = ({ children }) => {
         login,
         logout,
         isAuthenticated: !!user,
-        isAdmin: user?.rol === 'Admin'
+        isAdmin: user?.rol?.toLowerCase() === 'admin'
     };
 
     return (

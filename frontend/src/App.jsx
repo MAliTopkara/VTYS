@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Navbar from './components/Navbar';
 import Login from './pages/Login';
+import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Etkinlikler from './pages/Etkinlikler';
 import Kategoriler from './pages/Kategoriler';
@@ -14,6 +15,8 @@ import Kayitlar from './pages/Kayitlar';
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
 
+  console.log('ProtectedRoute: render', { isAuthenticated, loading });
+
   if (loading) {
     return (
       <div className="d-flex justify-content-center align-items-center" style={{ height: '100vh' }}>
@@ -25,6 +28,7 @@ const ProtectedRoute = ({ children }) => {
   }
 
   if (!isAuthenticated) {
+    console.log('ProtectedRoute: Not authenticated, redirecting to /login');
     return <Navigate to="/login" replace />;
   }
 
@@ -34,6 +38,8 @@ const ProtectedRoute = ({ children }) => {
 // Public Route - redirects to home if already logged in
 const PublicRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
+
+  console.log('PublicRoute: render', { isAuthenticated, loading });
 
   if (loading) {
     return (
@@ -46,7 +52,8 @@ const PublicRoute = ({ children }) => {
   }
 
   if (isAuthenticated) {
-    return <Navigate to="/" replace />;
+    console.log('PublicRoute: Authenticated, redirecting to /etkinlikler');
+    return <Navigate to="/etkinlikler" replace />;
   }
 
   return children;
@@ -58,8 +65,9 @@ const AppLayout = () => {
     <>
       <Navbar />
       <Routes>
-        <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+        <Route path="/" element={<Navigate to="/login" />} />
         <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+        <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
         <Route path="/etkinlikler" element={<ProtectedRoute><Etkinlikler /></ProtectedRoute>} />
         <Route path="/kategoriler" element={<ProtectedRoute><Kategoriler /></ProtectedRoute>} />
         <Route path="/katilimcilar" element={<ProtectedRoute><Katilimcilar /></ProtectedRoute>} />

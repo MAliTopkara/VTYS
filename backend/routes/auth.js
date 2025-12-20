@@ -1,12 +1,59 @@
 const express = require('express');
 const router = express.Router();
-const crypto = require('crypto');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 const { pool } = require('../db');
 
-// MD5 hash fonksiyonu
-const md5Hash = (text) => {
-    return crypto.createHash('md5').update(text).digest('hex');
-};
+// POST /api/auth/register - Kayıt
+router.post('/register', async (req, res) => {
+    try {
+        const { ad, soyad, email, sifre } = req.body;
+
+        // Validasyon
+        if (!ad || !soyad || !email || !sifre) {
+            return res.status(400).json({
+                success: false,
+                message: 'Tüm alanlar (ad, soyad, email, şifre) zorunludur!'
+            });
+        }
+
+        // Email kontrolü
+        const [existingUser] = await pool.query(
+            'SELECT * FROM kullanicilar WHERE email = ?',
+            [email]
+        );
+
+        if (existingUser.length > 0) {
+            return res.status(409).json({
+                success: false,
+                message: 'Bu email adresi zaten kullanılıyor!'
+            });
+        }
+
+        // Şifreleme (Bcrypt)
+        const hashedPassword = await bcrypt.hash(sifre, 10);
+
+        // Kayıt
+        const [result] = await pool.query(
+            'INSERT INTO kullanicilar (ad, soyad, email, sifre, rol) VALUES (?, ?, ?, ?, ?)',
+            [ad, soyad, email, hashedPassword, 'user']
+        );
+
+        res.status(201).json({
+            success: true,
+            message: 'Kullanıcı başarıyla oluşturuldu.',
+            kullanici_id: result.insertId
+        });
+
+    } catch (error) {
+        console.error('Register hatası:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Sunucu hatası!',
+            error: error.message
+        });
+    }
+});
 
 // POST /api/auth/login - Giriş
 router.post('/login', async (req, res) => {
@@ -33,31 +80,46 @@ router.post('/login', async (req, res) => {
         }
 
         const kullanici = rows[0];
-        const hashedPassword = md5Hash(sifre);
 
-        if (kullanici.sifre !== hashedPassword) {
+        // Şifre kontrolü (Bcrypt)
+        const validPassword = await bcrypt.compare(sifre, kullanici.sifre);
+        if (!validPassword) {
             return res.status(401).json({
                 success: false,
                 message: 'Email veya şifre hatalı!'
             });
         }
 
-        // Session'a kullanıcı bilgilerini kaydet
-        req.session.kullanici_id = kullanici.kullanici_id;
-        req.session.email = kullanici.email;
-        req.session.ad_soyad = kullanici.ad_soyad;
-        req.session.rol = kullanici.rol;
+        // Token oluşturma
+        const token = jwt.sign(
+            {
+                id: kullanici.id,
+                email: kullanici.email,
+                rol: kullanici.rol
+            },
+            process.env.JWT_SECRET || 'gizli_anahtar_123',
+            { expiresIn: '24h' }
+        );
+
+        // Session güncelleme (Geriye dönük uyumluluk için)
+        if (req.session) {
+            req.session.kullanici_id = kullanici.id;
+            req.session.rol = kullanici.rol;
+        }
 
         res.json({
             success: true,
-            message: `Hoş geldiniz, ${kullanici.ad_soyad}!`,
+            message: 'Giriş başarılı!',
+            token: token,
             user: {
-                kullanici_id: kullanici.kullanici_id,
+                id: kullanici.id,
+                ad: kullanici.ad,
+                soyad: kullanici.soyad,
                 email: kullanici.email,
-                ad_soyad: kullanici.ad_soyad,
                 rol: kullanici.rol
             }
         });
+
     } catch (error) {
         console.error('Login hatası:', error);
         res.status(500).json({
@@ -68,99 +130,54 @@ router.post('/login', async (req, res) => {
     }
 });
 
-// POST /api/auth/register - Kayıt
-router.post('/register', async (req, res) => {
+// GET /api/auth/me - Profil
+router.get('/me', async (req, res) => {
     try {
-        const { ad_soyad, email, telefon, sifre, sifre_tekrar, dogum_tarihi, sehir } = req.body;
-
-        // Gerekli alan kontrolü
-        if (!ad_soyad || !email || !sifre || !sifre_tekrar) {
-            return res.status(400).json({
-                success: false,
-                message: 'Ad soyad, email ve şifre alanları zorunludur!'
-            });
+        // Token'ı header'dan al
+        const authHeader = req.headers.authorization;
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            return res.status(401).json({ success: false, message: 'Token bulunamadı.' });
         }
 
-        // Şifre eşleşme kontrolü
-        if (sifre !== sifre_tekrar) {
-            return res.status(400).json({
-                success: false,
-                message: 'Şifreler eşleşmiyor!'
-            });
-        }
+        const token = authHeader.split(' ')[1];
 
-        // Email benzersizlik kontrolü
-        const [existingUser] = await pool.query(
-            'SELECT * FROM kullanicilar WHERE email = ?',
-            [email]
+        // Token'ı doğrula
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'gizli_anahtar_123');
+
+        // Kullanıcı bilgilerini veritabanından al
+        const [rows] = await pool.query(
+            'SELECT id, ad, soyad, email, rol FROM kullanicilar WHERE id = ?',
+            [decoded.id]
         );
 
-        if (existingUser.length > 0) {
-            return res.status(400).json({
-                success: false,
-                message: 'Bu email adresi zaten kullanılıyor!'
-            });
+        if (rows.length === 0) {
+            return res.status(404).json({ success: false, message: 'Kullanıcı bulunamadı.' });
         }
 
-        // Şifreyi MD5 ile hashle
-        const hashedPassword = md5Hash(sifre);
-
-        // Kullanıcıyı veritabanına ekle
-        const [result] = await pool.query(
-            `INSERT INTO kullanicilar (ad_soyad, email, sifre, rol) 
-             VALUES (?, ?, ?, 'Kullanici')`,
-            [ad_soyad, email, hashedPassword]
-        );
-
-        res.status(201).json({
+        res.json({
             success: true,
-            message: 'Kayıt başarılı! Giriş yapabilirsiniz.',
-            kullanici_id: result.insertId
+            user: rows[0]
         });
+
     } catch (error) {
-        console.error('Register hatası:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Sunucu hatası!',
-            error: error.message
-        });
+        console.error('Me endpoint hatası:', error);
+        return res.status(401).json({ success: false, message: 'Geçersiz token.' });
     }
 });
 
 // POST /api/auth/logout - Çıkış
 router.post('/logout', (req, res) => {
-    req.session.destroy((err) => {
-        if (err) {
-            return res.status(500).json({
-                success: false,
-                message: 'Çıkış yapılırken hata oluştu!'
-            });
-        }
-        res.json({
-            success: true,
-            message: 'Başarıyla çıkış yaptınız!'
+    if (req.session) {
+        req.session.destroy((err) => {
+            if (err) {
+                return res.status(500).json({ success: false, message: 'Çıkış yapılamadı.' });
+            }
+            res.clearCookie('connect.sid'); // Session cookie adını temizle
+            res.json({ success: true, message: 'Başarıyla çıkış yapıldı.' });
         });
-    });
-});
-
-// GET /api/auth/me - Mevcut kullanıcı bilgisi
-router.get('/me', (req, res) => {
-    if (!req.session || !req.session.kullanici_id) {
-        return res.status(401).json({
-            success: false,
-            message: 'Oturum açılmamış!'
-        });
+    } else {
+        res.json({ success: true, message: 'Zaten giriş yapılmamış.' });
     }
-
-    res.json({
-        success: true,
-        user: {
-            kullanici_id: req.session.kullanici_id,
-            email: req.session.email,
-            ad_soyad: req.session.ad_soyad,
-            rol: req.session.rol
-        }
-    });
 });
 
 module.exports = router;

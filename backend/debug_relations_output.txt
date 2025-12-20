@@ -1,0 +1,163 @@
+[
+  {
+    "TABLE_NAME": "katilimcilar",
+    "COLUMN_NAME": "ad_soyad",
+    "COLUMN_TYPE": "varchar(100)",
+    "COLUMN_KEY": "MUL",
+    "EXTRA": ""
+  },
+  {
+    "TABLE_NAME": "katilimcilar",
+    "COLUMN_NAME": "cinsiyet",
+    "COLUMN_TYPE": "enum('Erkek','Kadın','Belirtmek İstemiyorum')",
+    "COLUMN_KEY": "",
+    "EXTRA": ""
+  },
+  {
+    "TABLE_NAME": "katilimcilar",
+    "COLUMN_NAME": "dogum_tarihi",
+    "COLUMN_TYPE": "date",
+    "COLUMN_KEY": "",
+    "EXTRA": ""
+  },
+  {
+    "TABLE_NAME": "katilimcilar",
+    "COLUMN_NAME": "email",
+    "COLUMN_TYPE": "varchar(100)",
+    "COLUMN_KEY": "UNI",
+    "EXTRA": ""
+  },
+  {
+    "TABLE_NAME": "katilimcilar",
+    "COLUMN_NAME": "katilimci_id",
+    "COLUMN_TYPE": "int",
+    "COLUMN_KEY": "PRI",
+    "EXTRA": "auto_increment"
+  },
+  {
+    "TABLE_NAME": "katilimcilar",
+    "COLUMN_NAME": "kayit_tarihi",
+    "COLUMN_TYPE": "timestamp",
+    "COLUMN_KEY": "",
+    "EXTRA": "DEFAULT_GENERATED"
+  },
+  {
+    "TABLE_NAME": "katilimcilar",
+    "COLUMN_NAME": "sehir",
+    "COLUMN_TYPE": "varchar(50)",
+    "COLUMN_KEY": "",
+    "EXTRA": ""
+  },
+  {
+    "TABLE_NAME": "katilimcilar",
+    "COLUMN_NAME": "telefon",
+    "COLUMN_TYPE": "varchar(20)",
+    "COLUMN_KEY": "",
+    "EXTRA": ""
+  },
+  {
+    "TABLE_NAME": "kayitlar",
+    "COLUMN_NAME": "durum",
+    "COLUMN_TYPE": "enum('Onaylandı','Beklemede','İptal')",
+    "COLUMN_KEY": "MUL",
+    "EXTRA": ""
+  },
+  {
+    "TABLE_NAME": "kayitlar",
+    "COLUMN_NAME": "etkinlik_id",
+    "COLUMN_TYPE": "int",
+    "COLUMN_KEY": "MUL",
+    "EXTRA": ""
+  },
+  {
+    "TABLE_NAME": "kayitlar",
+    "COLUMN_NAME": "katilim_durumu",
+    "COLUMN_TYPE": "enum('Katıldı','Katılmadı','Belirsiz')",
+    "COLUMN_KEY": "",
+    "EXTRA": ""
+  },
+  {
+    "TABLE_NAME": "kayitlar",
+    "COLUMN_NAME": "katilimci_id",
+    "COLUMN_TYPE": "int",
+    "COLUMN_KEY": "MUL",
+    "EXTRA": ""
+  },
+  {
+    "TABLE_NAME": "kayitlar",
+    "COLUMN_NAME": "kayit_id",
+    "COLUMN_TYPE": "int",
+    "COLUMN_KEY": "PRI",
+    "EXTRA": "auto_increment"
+  },
+  {
+    "TABLE_NAME": "kayitlar",
+    "COLUMN_NAME": "kayit_tarihi",
+    "COLUMN_TYPE": "timestamp",
+    "COLUMN_KEY": "",
+    "EXTRA": "DEFAULT_GENERATED"
+  },
+  {
+    "TABLE_NAME": "kayitlar",
+    "COLUMN_NAME": "notlar",
+    "COLUMN_TYPE": "text",
+    "COLUMN_KEY": "",
+    "EXTRA": ""
+  },
+  {
+    "TABLE_NAME": "kullanicilar",
+    "COLUMN_NAME": "ad",
+    "COLUMN_TYPE": "varchar(50)",
+    "COLUMN_KEY": "",
+    "EXTRA": ""
+  },
+  {
+    "TABLE_NAME": "kullanicilar",
+    "COLUMN_NAME": "created_at",
+    "COLUMN_TYPE": "timestamp",
+    "COLUMN_KEY": "",
+    "EXTRA": "DEFAULT_GENERATED"
+  },
+  {
+    "TABLE_NAME": "kullanicilar",
+    "COLUMN_NAME": "email",
+    "COLUMN_TYPE": "varchar(100)",
+    "COLUMN_KEY": "UNI",
+    "EXTRA": ""
+  },
+  {
+    "TABLE_NAME": "kullanicilar",
+    "COLUMN_NAME": "id",
+    "COLUMN_TYPE": "int",
+    "COLUMN_KEY": "PRI",
+    "EXTRA": "auto_increment"
+  },
+  {
+    "TABLE_NAME": "kullanicilar",
+    "COLUMN_NAME": "kullanici_id",
+    "COLUMN_TYPE": "int",
+    "COLUMN_KEY": "MUL",
+    "EXTRA": ""
+  },
+  {
+    "TABLE_NAME": "kullanicilar",
+    "COLUMN_NAME": "rol",
+    "COLUMN_TYPE": "enum('admin','user')",
+    "COLUMN_KEY": "",
+    "EXTRA": ""
+  },
+  {
+    "TABLE_NAME": "kullanicilar",
+    "COLUMN_NAME": "sifre",
+    "COLUMN_TYPE": "varchar(255)",
+    "COLUMN_KEY": "",
+    "EXTRA": ""
+  },
+  {
+    "TABLE_NAME": "kullanicilar",
+    "COLUMN_NAME": "soyad",
+    "COLUMN_TYPE": "varchar(50)",
+    "COLUMN_KEY": "",
+    "EXTRA": ""
+  }
+]

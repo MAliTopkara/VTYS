@@ -84,7 +84,13 @@ router.post('/', adminRequired, async (req, res) => {
             durum
         } = req.body;
 
-        const olusturan_kullanici_id = req.session.kullanici_id || 1;
+        const olusturan_kullanici_id = (req.user && req.user.id) || (req.session && req.session.kullanici_id) || 1;
+
+        console.log('DEBUG INSERT:', {
+            olusturan_kullanici_id,
+            req_user: req.user,
+            type: typeof olusturan_kullanici_id
+        });
 
         const [result] = await pool.query(`
             INSERT INTO etkinlikler 
@@ -100,11 +106,19 @@ router.post('/', adminRequired, async (req, res) => {
             etkinlik_id: result.insertId
         });
     } catch (error) {
+        console.error('SERVER ERROR LOG:');
+        console.error('Message:', error.message);
+        console.error('Stack:', error.stack);
+        console.error('SQL State:', error.sqlState);
+        console.error('SQL Message:', error.sqlMessage);
+
         console.error('Etkinlik ekleme hatası:', error);
         res.status(500).json({
             success: false,
             message: 'Etkinlik eklenirken hata oluştu!',
-            error: error.message
+            error: error.message,
+            sqlMessage: error.sqlMessage,
+            code: error.code
         });
     }
 });

@@ -10,6 +10,37 @@ const api = axios.create({
     }
 });
 
+// Request interceptor - Her istekte token ekle
+api.interceptors.request.use(
+    (config) => {
+        const token = localStorage.getItem('token');
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
+    },
+    (error) => {
+        return Promise.reject(error);
+    }
+);
+
+// Response interceptor - 401 hatalarında çıkış yap
+api.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.response?.status === 401) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            // Sadece login sayfasında değilsek yönlendir
+            if (!window.location.pathname.includes('/login')) {
+                console.warn('Interceptor: 401 detected, redirecting to login');
+                // window.location.href = '/login'; // Refresh döngüsünü engellemek için geçici olarak kapattık
+            }
+        }
+        return Promise.reject(error);
+    }
+);
+
 // Auth servisleri
 export const authService = {
     login: (email, sifre) => api.post('/auth/login', { email, sifre }),

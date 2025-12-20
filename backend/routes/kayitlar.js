@@ -15,7 +15,8 @@ router.get('/', loginRequired, async (req, res) => {
                 kat.ad_soyad,
                 k.kayit_tarihi,
                 k.durum,
-                k.katilim_durumu
+                k.katilim_durumu,
+                kat.email
             FROM kayitlar k
             INNER JOIN etkinlikler e ON k.etkinlik_id = e.etkinlik_id
             INNER JOIN katilimcilar kat ON k.katilimci_id = kat.katilimci_id
@@ -66,15 +67,54 @@ router.get('/:id', loginRequired, async (req, res) => {
     }
 });
 
-// POST /api/kayitlar - Yeni kayıt ekle
-router.post('/', adminRequired, async (req, res) => {
+// POST /api/kayitlar - Yeni kayıt ekle (Admin veya Kullanıcı)
+router.post('/', loginRequired, async (req, res) => {
     try {
-        const { etkinlik_id, katilimci_id, durum } = req.body;
+        let { etkinlik_id, katilimci_id, durum } = req.body;
+        const user = req.user;
+
+        // Admin değilse ve başkası adına işlem yapmaya çalışıyorsa engelle
+        if (katilimci_id && user.rol !== 'admin') {
+            return res.status(403).json({
+                success: false,
+                message: 'Başkası adına kayıt yapamazsınız!'
+            });
+        }
+
+        // Eğer kullanıcı kendisi kayıt oluyorsa (katilimci_id yoksa)
+        if (!katilimci_id) {
+            // Önce bu email ile katılımcı var mı bak
+            const [participants] = await pool.query('SELECT katilimci_id FROM katilimcilar WHERE email = ?', [user.email]);
+
+            if (participants.length > 0) {
+                katilimci_id = participants[0].katilimci_id;
+            } else {
+                // Katılımcı yoksa oluştur
+                const [newPart] = await pool.query(
+                    'INSERT INTO katilimcilar (ad_soyad, email) VALUES (?, ?)',
+                    [`${user.ad || ''} ${user.soyad || ''}`.trim(), user.email]
+                );
+                katilimci_id = newPart.insertId;
+            }
+        }
 
         if (!etkinlik_id || !katilimci_id) {
             return res.status(400).json({
                 success: false,
-                message: 'Etkinlik ve katılımcı ID gerekli!'
+                message: 'Etkinlik ID gerekli!'
+            });
+        }
+
+        // Mükerrer kayıt kontrolü
+        const [existing] = await pool.query(
+            'SELECT * FROM kayitlar WHERE etkinlik_id = ? AND katilimci_id = ?',
+            [etkinlik_id, katilimci_id]
+        );
+
+        if (existing.length > 0) {
+            return res.status(409).json({
+                success: false,
+                message: 'Zaten bu etkinliğe kaydınız var!'
             });
         }
 
@@ -85,7 +125,7 @@ router.post('/', adminRequired, async (req, res) => {
 
         res.status(201).json({
             success: true,
-            message: 'Kayıt başarıyla eklendi!',
+            message: 'Kayıt başarıyla oluşturuldu!',
             kayit_id: result.insertId
         });
     } catch (error) {
@@ -130,20 +170,41 @@ router.put('/:id', adminRequired, async (req, res) => {
     }
 });
 
-// DELETE /api/kayitlar/:id - Kayıt sil
-router.delete('/:id', adminRequired, async (req, res) => {
+// DELETE /api/kayitlar/:id - Kayıt sil (İptal)
+router.delete('/:id', loginRequired, async (req, res) => {
     try {
-        const [result] = await pool.query(
-            'DELETE FROM kayitlar WHERE kayit_id = ?',
-            [req.params.id]
-        );
+        const kayitId = req.params.id;
+        const user = req.user;
 
-        if (result.affectedRows === 0) {
+        // Önce kaydı bul
+        const [registrations] = await pool.query(`
+            SELECT k.*, p.email 
+            FROM kayitlar k 
+            JOIN katilimcilar p ON k.katilimci_id = p.katilimci_id 
+            WHERE k.kayit_id = ?
+        `, [kayitId]);
+
+        if (registrations.length === 0) {
             return res.status(404).json({
                 success: false,
                 message: 'Kayıt bulunamadı!'
             });
         }
+
+        const registration = registrations[0];
+
+        // Yetki kontrolü: Admin değilse ve kayıt kendine ait değilse
+        if (user.rol !== 'admin' && registration.email !== user.email) {
+            return res.status(403).json({
+                success: false,
+                message: 'Bu kaydı silme yetkiniz yok!'
+            });
+        }
+
+        const [result] = await pool.query(
+            'DELETE FROM kayitlar WHERE kayit_id = ?',
+            [kayitId]
+        );
 
         res.json({
             success: true,

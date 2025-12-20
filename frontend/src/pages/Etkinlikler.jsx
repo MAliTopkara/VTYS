@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { etkinlikService, kategoriService, mekanService } from '../services/api';
+import { etkinlikService, kategoriService, mekanService, kayitService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
 const Etkinlikler = () => {
     const [etkinlikler, setEtkinlikler] = useState([]);
     const [kategoriler, setKategoriler] = useState([]);
     const [mekanlar, setMekanlar] = useState([]);
+    const [myRegistrations, setMyRegistrations] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [message, setMessage] = useState('');
@@ -13,7 +14,7 @@ const Etkinlikler = () => {
     const [formLoading, setFormLoading] = useState(false);
     const [editMode, setEditMode] = useState(false);
     const [selectedEtkinlik, setSelectedEtkinlik] = useState(null);
-    const { isAdmin } = useAuth();
+    const { isAdmin, user } = useAuth();
 
     const [formData, setFormData] = useState({
         etkinlik_adi: '',
@@ -30,7 +31,25 @@ const Etkinlikler = () => {
         fetchEtkinlikler();
         fetchKategoriler();
         fetchMekanlar();
-    }, []);
+        if (user) {
+            fetchRegistrations();
+        }
+    }, [user]);
+
+    const fetchRegistrations = async () => {
+        try {
+            const response = await kayitService.getAll();
+            if (response.data.success) {
+                // Sadece kendime ait kayıtları filtrele
+                const myRegs = response.data.data.filter(r => r.email === user.email);
+                setMyRegistrations(myRegs);
+            }
+        } catch (err) {
+            console.error('Kayıtlar alınamadı:', err);
+        }
+    };
+
+
 
     const fetchEtkinlikler = async () => {
         try {
@@ -67,24 +86,104 @@ const Etkinlikler = () => {
         }
     };
 
-    const handleDelete = async (id) => {
-        if (!window.confirm('Bu etkinliği silmek istediğinizden emin misiniz?')) return;
+    const [confirmModal, setConfirmModal] = useState({
+        show: false,
+        title: '',
+        message: '',
+        onConfirm: null,
+        variant: 'primary',
+        confirmText: 'Evet'
+    });
 
-        try {
-            await etkinlikService.delete(id);
-            setMessage('Etkinlik başarıyla silindi!');
-            fetchEtkinlikler();
-        } catch (err) {
-            setError('Etkinlik silinirken hata oluştu!');
+    const openConfirmModal = (title, message, onConfirm, variant = 'primary', confirmText = 'Evet') => {
+        setConfirmModal({
+            show: true,
+            title,
+            message,
+            onConfirm,
+            variant,
+            confirmText
+        });
+    };
+
+    const closeConfirmModal = () => {
+        setConfirmModal(prev => ({ ...prev, show: false }));
+    };
+
+    const handleConfirm = () => {
+        if (confirmModal.onConfirm) {
+            confirmModal.onConfirm();
         }
+        closeConfirmModal();
+    };
+
+    const handleDelete = (id) => {
+        openConfirmModal(
+            'Etkinlik Sil',
+            'Bu etkinliği silmek istediğinizden emin misiniz?',
+            async () => {
+                try {
+                    await etkinlikService.delete(id);
+                    setMessage('Etkinlik başarıyla silindi!');
+                    fetchEtkinlikler();
+                } catch (err) {
+                    setError('Etkinlik silinirken hata oluştu!');
+                }
+            },
+            'danger',
+            'Sil'
+        );
     };
 
     const handleChange = (e) => {
+        // ... (existing handleChange)
         const { name, value } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: value
-        }));
+        setFormData(prev => ({ ...prev, [name]: value }));
+    };
+
+    // Note: handleSubmit logic remains similar but alert uses might need change. 
+    // For now dealing with confirms as requested.
+
+    const handleJoin = (etkinlikId) => {
+        openConfirmModal(
+            'Etkinliğe Katıl',
+            'Bu etkinliğe katılmak istiyor musunuz?',
+            async () => {
+                try {
+                    await kayitService.create({
+                        etkinlik_id: etkinlikId,
+                        durum: 'Beklemede'
+                    });
+                    setMessage('Etkinliğe katılım isteğiniz alındı!');
+                    fetchRegistrations();
+                } catch (err) {
+                    setError('Katılım başarısız: ' + (err.response?.data?.message || err.message));
+                }
+            },
+            'success',
+            'Katıl'
+        );
+    };
+
+    const handleCancel = (etkinlikId) => {
+        openConfirmModal(
+            'Kaydı İptal Et',
+            'Kaydınızı iptal etmek istediğinize emin misiniz?',
+            async () => {
+                const reg = myRegistrations.find(r => r.etkinlik_id === etkinlikId);
+                if (!reg) return;
+
+                try {
+                    await kayitService.delete(reg.kayit_id);
+                    setMessage('Kaydınız iptal edildi.');
+                    fetchRegistrations();
+                } catch (err) {
+                    setError('İptal işlemi başarısız: ' + (err.response?.data?.message || err.message));
+                }
+            },
+            'danger',
+            'İptal Et'
+        );
     };
 
     const handleSubmit = async (e) => {
@@ -106,8 +205,14 @@ const Etkinlikler = () => {
                 fetchEtkinlikler();
             }
         } catch (err) {
-            console.error('Etkinlik işlem hatası:', err);
-            alert('Hata oluştu: ' + (err.response?.data?.message || err.message));
+            const serverError = err.response?.data;
+            let errorMessage = 'Hata oluştu: ' + (err.message);
+
+            if (serverError) {
+                errorMessage = `Sunucu Hatası:\nMesaj: ${serverError.message}\nDetay: ${serverError.error}\nSQL Mesajı: ${serverError.sqlMessage || 'Yok'}`;
+            }
+
+            alert(errorMessage);
         } finally {
             setFormLoading(false);
         }
@@ -117,11 +222,9 @@ const Etkinlikler = () => {
         setEditMode(true);
         setSelectedEtkinlik(etkinlik);
 
-        // Tarih formatını input type="datetime-local" için ayarla (YYYY-MM-DDTHH:MM)
         const formatDateForInput = (dateStr) => {
             if (!dateStr) return '';
             const date = new Date(dateStr);
-            // Saat dilimi düzeltmesi (Türkiye +3)
             date.setHours(date.getHours() + 3);
             return date.toISOString().slice(0, 16);
         };
@@ -186,20 +289,13 @@ const Etkinlikler = () => {
         }
     };
 
-    if (loading) {
-        return (
-            <div className="container">
-                <div className="d-flex justify-content-center align-items-center" style={{ height: '50vh' }}>
-                    <div className="spinner-border text-primary" role="status">
-                        <span className="visually-hidden">Yükleniyor...</span>
-                    </div>
-                </div>
-            </div>
-        );
-    }
+    // ... existing render ...
+    // Need to insert modal JSX before closing div
 
     return (
         <div className="container">
+            {/* ... existing JSX ... */}
+
             <div className="row mb-4">
                 <div className="col-12 d-flex justify-content-between align-items-center">
                     <h1 className="display-5">
@@ -235,7 +331,7 @@ const Etkinlikler = () => {
                                     <th>Tarih</th>
                                     <th>Kontenjan</th>
                                     <th>Durum</th>
-                                    {isAdmin && <th>İşlemler</th>}
+                                    <th>İşlemler</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -252,7 +348,7 @@ const Etkinlikler = () => {
                                                 {etkinlik.durum}
                                             </span>
                                         </td>
-                                        {isAdmin && (
+                                        {isAdmin ? (
                                             <td>
                                                 <button
                                                     onClick={() => handleEdit(etkinlik)}
@@ -266,6 +362,25 @@ const Etkinlikler = () => {
                                                 >
                                                     <i className="bi bi-trash"></i> Sil
                                                 </button>
+                                            </td>
+                                        ) : (
+                                            <td>
+                                                {myRegistrations.some(r => r.etkinlik_id === etkinlik.etkinlik_id) ? (
+                                                    <button
+                                                        className="btn btn-sm btn-danger"
+                                                        onClick={() => handleCancel(etkinlik.etkinlik_id)}
+                                                    >
+                                                        <i className="bi bi-x-circle"></i> İptal Et
+                                                    </button>
+                                                ) : (
+                                                    <button
+                                                        className="btn btn-sm btn-success"
+                                                        onClick={() => handleJoin(etkinlik.etkinlik_id)}
+                                                        disabled={etkinlik.durum !== 'Aktif' && etkinlik.durum !== 'Planlanıyor'}
+                                                    >
+                                                        <i className="bi bi-person-plus"></i> Katıl
+                                                    </button>
+                                                )}
                                             </td>
                                         )}
                                     </tr>
@@ -432,6 +547,31 @@ const Etkinlikler = () => {
                                     </button>
                                 </div>
                             </form>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Custom Confirmation Modal */}
+            {confirmModal.show && (
+                <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1060 }}>
+                    <div className="modal-dialog modal-dialog-centered">
+                        <div className="modal-content">
+                            <div className="modal-header">
+                                <h5 className="modal-title">{confirmModal.title}</h5>
+                                <button type="button" className="btn-close" onClick={closeConfirmModal}></button>
+                            </div>
+                            <div className="modal-body">
+                                <p>{confirmModal.message}</p>
+                            </div>
+                            <div className="modal-footer">
+                                <button type="button" className="btn btn-secondary" onClick={closeConfirmModal}>
+                                    İptal
+                                </button>
+                                <button type="button" className={`btn btn-${confirmModal.variant}`} onClick={handleConfirm}>
+                                    {confirmModal.confirmText}
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>

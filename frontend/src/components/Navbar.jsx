@@ -7,8 +7,15 @@ const Navbar = () => {
     const { user, logout, isAuthenticated } = useAuth();
 
     const handleLogout = async () => {
-        await logout();
-        navigate('/login');
+        try {
+            await logout(); // Backend session destroy
+        } catch (error) {
+            console.error('Logout failed:', error);
+        }
+        // Client side cleanup
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
     };
 
     const isActive = (path) => location.pathname === path ? 'active' : '';
