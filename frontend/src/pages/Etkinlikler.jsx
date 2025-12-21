@@ -27,6 +27,10 @@ const Etkinlikler = () => {
         durum: 'Planlanıyor'
     });
 
+    const [searchTerm, setSearchTerm] = useState('');
+    const [appliedFilter, setAppliedFilter] = useState('');
+    const [selectedCategory, setSelectedCategory] = useState('Tüm Kategoriler');
+
     useEffect(() => {
         fetchEtkinlikler();
         fetchKategoriler();
@@ -289,6 +293,20 @@ const Etkinlikler = () => {
         }
     };
 
+    const handleSearch = () => {
+        setAppliedFilter(searchTerm);
+    };
+
+    // Filtreleme Mantığı
+    const filteredEtkinlikler = etkinlikler.filter(etkinlik => {
+        const matchesSearch = etkinlik.etkinlik_adi.toLowerCase().includes(appliedFilter.toLowerCase());
+        const matchesCategory = selectedCategory === 'Tüm Kategoriler' || etkinlik.kategori_adi === selectedCategory;
+        return matchesSearch && matchesCategory;
+    });
+
+    // Benzersiz kategorileri bul (Drop-down için alternatif, ama zaten fetched kategoriler var)
+    // const uniqueCategories = ['Tüm Kategoriler', ...new Set(etkinlikler.map(e => e.kategori_adi))];
+
     // ... existing render ...
     // Need to insert modal JSX before closing div
 
@@ -318,37 +336,37 @@ const Etkinlikler = () => {
                 <button type="button" className="btn-close" onClick={() => setMessage('')}></button>
             </div>}
 
-            <div className="card">
-                <div className="card-body">
-                    <div className="table-responsive">
-                        <table className="table table-hover">
-                            <thead className="table-light">
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Etkinlik Adı</th>
-                                    <th>Kategori</th>
-                                    <th>Mekan</th>
-                                    <th>Tarih</th>
-                                    <th>Kontenjan</th>
-                                    <th>Durum</th>
-                                    <th>İşlemler</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {etkinlikler.map((etkinlik) => (
-                                    <tr key={etkinlik.etkinlik_id}>
-                                        <td>{etkinlik.etkinlik_id}</td>
-                                        <td><strong>{etkinlik.etkinlik_adi}</strong></td>
-                                        <td><span className="badge bg-info">{etkinlik.kategori_adi}</span></td>
-                                        <td><i className="bi bi-geo-alt"></i> {etkinlik.mekan_adi}</td>
-                                        <td>{formatDate(etkinlik.baslangic_tarihi)}</td>
-                                        <td><span className="badge bg-secondary">{etkinlik.kontenjan}</span></td>
-                                        <td>
-                                            <span className={`badge ${getDurumBadge(etkinlik.durum)}`}>
-                                                {etkinlik.durum}
-                                            </span>
-                                        </td>
-                                        {isAdmin ? (
+            {isAdmin ? (
+                <div className="card">
+                    <div className="card-body">
+                        <div className="table-responsive">
+                            <table className="table table-hover">
+                                <thead className="table-light">
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Etkinlik Adı</th>
+                                        <th>Kategori</th>
+                                        <th>Mekan</th>
+                                        <th>Tarih</th>
+                                        <th>Kontenjan</th>
+                                        <th>Durum</th>
+                                        <th>İşlemler</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {etkinlikler.map((etkinlik) => (
+                                        <tr key={etkinlik.etkinlik_id}>
+                                            <td>{etkinlik.etkinlik_id}</td>
+                                            <td><strong>{etkinlik.etkinlik_adi}</strong></td>
+                                            <td><span className="badge bg-info">{etkinlik.kategori_adi}</span></td>
+                                            <td><i className="bi bi-geo-alt"></i> {etkinlik.mekan_adi}</td>
+                                            <td>{formatDate(etkinlik.baslangic_tarihi)}</td>
+                                            <td><span className="badge bg-secondary">{etkinlik.kontenjan}</span></td>
+                                            <td>
+                                                <span className={`badge ${getDurumBadge(etkinlik.durum)}`}>
+                                                    {etkinlik.durum}
+                                                </span>
+                                            </td>
                                             <td>
                                                 <button
                                                     onClick={() => handleEdit(etkinlik)}
@@ -363,36 +381,138 @@ const Etkinlikler = () => {
                                                     <i className="bi bi-trash"></i> Sil
                                                 </button>
                                             </td>
-                                        ) : (
-                                            <td>
-                                                {myRegistrations.some(r => r.etkinlik_id === etkinlik.etkinlik_id) ? (
-                                                    <button
-                                                        className="btn btn-sm btn-danger"
-                                                        onClick={() => handleCancel(etkinlik.etkinlik_id)}
-                                                    >
-                                                        <i className="bi bi-x-circle"></i> İptal Et
-                                                    </button>
-                                                ) : (
-                                                    <button
-                                                        className="btn btn-sm btn-success"
-                                                        onClick={() => handleJoin(etkinlik.etkinlik_id)}
-                                                        disabled={etkinlik.durum !== 'Aktif' && etkinlik.durum !== 'Planlanıyor'}
-                                                    >
-                                                        <i className="bi bi-person-plus"></i> Katıl
-                                                    </button>
-                                                )}
-                                            </td>
-                                        )}
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                        {etkinlikler.length === 0 && (
-                            <p className="text-center text-muted">Henüz etkinlik bulunmuyor.</p>
-                        )}
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                            {etkinlikler.length === 0 && (
+                                <p className="text-center text-muted p-4">Henüz etkinlik bulunmuyor.</p>
+                            )}
+                        </div>
                     </div>
                 </div>
-            </div>
+            ) : (
+                <>
+                    {/* Arama ve Filtreleme Alanı (Sadece User İçin) */}
+                    <div className="row g-3 mb-4">
+                        <div className="col-md-8">
+                            <div className="input-group input-group-lg">
+                                <span className="input-group-text bg-white border-end-0 text-muted">
+                                    <i className="bi bi-search"></i>
+                                </span>
+                                <input
+                                    type="text"
+                                    className="form-control border-start-0 ps-0"
+                                    placeholder="Etkinlik ara..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                                />
+                                <button
+                                    className="btn btn-primary"
+                                    type="button"
+                                    onClick={handleSearch}
+                                >
+                                    Ara
+                                </button>
+                            </div>
+                        </div>
+                        <div className="col-md-4">
+                            <div className="input-group input-group-lg">
+                                <span className="input-group-text bg-white border-end-0 text-muted">
+                                    <i className="bi bi-funnel"></i>
+                                </span>
+                                <select
+                                    className="form-select border-start-0 ps-0"
+                                    value={selectedCategory}
+                                    onChange={(e) => setSelectedCategory(e.target.value)}
+                                >
+                                    <option value="Tüm Kategoriler">Tüm Kategoriler</option>
+                                    {kategoriler.map(k => (
+                                        <option key={k.kategori_id} value={k.kategori_adi}>
+                                            {k.kategori_adi}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="row g-4">
+                        {filteredEtkinlikler.map((etkinlik) => (
+                            <div key={etkinlik.etkinlik_id} className="col-12 col-md-6 col-lg-4">
+                                <div className="card h-100 shadow-sm border-0 transition-hover">
+                                    <div className="position-relative">
+                                        <img
+                                            src={`https://picsum.photos/seed/${etkinlik.etkinlik_id}/300/200`}
+                                            className="card-img-top"
+                                            alt={etkinlik.etkinlik_adi}
+                                            style={{ height: '200px', objectFit: 'cover' }}
+                                        />
+                                        <div className="position-absolute top-0 end-0 p-2">
+                                            <span className={`badge ${getDurumBadge(etkinlik.durum)} shadow-sm`}>
+                                                {etkinlik.durum}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="card-body d-flex flex-column">
+                                        <div className="mb-2">
+                                            <span className="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25 rounded-pill">
+                                                {etkinlik.kategori_adi}
+                                            </span>
+                                        </div>
+                                        <h5 className="card-title fw-bold text-dark">{etkinlik.etkinlik_adi}</h5>
+                                        <p className="card-text text-muted small flex-grow-1 line-clamp-3">
+                                            {etkinlik.aciklama || 'Etkinlik açıklaması bulunmuyor.'}
+                                        </p>
+
+                                        <div className="mt-3 text-secondary small">
+                                            <div className="mb-1">
+                                                <i className="bi bi-calendar-event me-2"></i>
+                                                {formatDate(etkinlik.baslangic_tarihi)}
+                                            </div>
+                                            <div className="mb-1">
+                                                <i className="bi bi-geo-alt me-2"></i>
+                                                {etkinlik.mekan_adi} - {etkinlik.sehir}
+                                            </div>
+                                            <div>
+                                                <i className="bi bi-people me-2"></i>
+                                                Kontenjan: {etkinlik.kontenjan}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="card-footer bg-white border-top-0 pb-3 pt-0">
+                                        <div className="d-grid gap-2">
+                                            {myRegistrations.some(r => r.etkinlik_id === etkinlik.etkinlik_id) ? (
+                                                <button
+                                                    className="btn btn-outline-danger"
+                                                    onClick={() => handleCancel(etkinlik.etkinlik_id)}
+                                                >
+                                                    <i className="bi bi-x-circle me-2"></i> İptal Et
+                                                </button>
+                                            ) : (
+                                                <button
+                                                    className="btn btn-primary"
+                                                    onClick={() => handleJoin(etkinlik.etkinlik_id)}
+                                                    disabled={etkinlik.durum !== 'Aktif' && etkinlik.durum !== 'Planlanıyor'}
+                                                >
+                                                    <i className="bi bi-ticket-perforated me-2"></i> Etkinliğe Katıl
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                        {filteredEtkinlikler.length === 0 && (
+                            <div className="col-12 text-center py-5">
+                                <i className="bi bi-calendar-x display-1 text-muted opacity-25"></i>
+                                <p className="mt-3 text-muted">Henüz listelenecek etkinlik bulunmuyor.</p>
+                            </div>
+                        )}
+                    </div>
+                </>
+            )}
 
             {/* Etkinlik Ekleme Modal */}
             {showModal && (

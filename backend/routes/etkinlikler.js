@@ -195,4 +195,91 @@ router.delete('/:id', adminRequired, async (req, res) => {
     }
 });
 
+// POST /api/etkinlikler/:id/katil - Etkinliğe katıl
+router.post('/:id/katil', loginRequired, async (req, res) => {
+    const connection = await pool.getConnection(); // Transaction için connection al
+    try {
+        await connection.beginTransaction();
+
+        const etkinlikId = req.params.id;
+        const userId = req.user.id; // Token'dan gelen user ID
+
+        // 1. Kullanıcı bilgilerini al
+        const [users] = await connection.query(
+            'SELECT ad, soyad, email FROM kullanicilar WHERE id = ?',
+            [userId]
+        );
+
+        if (users.length === 0) {
+            throw new Error('Kullanıcı bulunamadı!');
+        }
+
+        const user = users[0];
+        let katilimciId;
+
+        // 2. Katılımcı tablosunda bu email var mı?
+        const [existingParticipants] = await connection.query(
+            'SELECT katilimci_id FROM katilimcilar WHERE email = ?',
+            [user.email]
+        );
+
+        if (existingParticipants.length > 0) {
+            katilimciId = existingParticipants[0].katilimci_id;
+        } else {
+            // 3. Yoksa ekle (Ad ve Soyad ayrı sütunlar)
+            // Not: Kullanıcılar tablosunda telefon olmadığı için buraya boş geçiyoruz veya null
+            const [newParticipant] = await connection.query(
+                'INSERT INTO katilimcilar (ad, soyad, email, telefon) VALUES (?, ?, ?, ?)',
+                [user.ad, user.soyad, user.email, '']
+            );
+            katilimciId = newParticipant.insertId;
+        }
+
+        // 4. Zaten kayıtlı mı?
+        const [existingRegistration] = await connection.query(
+            'SELECT kayit_id FROM kayitlar WHERE etkinlik_id = ? AND katilimci_id = ?',
+            [etkinlikId, katilimciId]
+        );
+
+        if (existingRegistration.length > 0) {
+            await connection.rollback();
+            return res.status(400).json({
+                success: false,
+                message: 'Zaten bu etkinliğe katıldınız!'
+            });
+        }
+
+        // 5. Kayıtlar tablosuna ekle
+        await connection.query(
+            'INSERT INTO kayitlar (etkinlik_id, katilimci_id, durum, katilim_durumu) VALUES (?, ?, ?, ?)',
+            [etkinlikId, katilimciId, 'Onaylandı', 'Katılacak']
+        );
+
+        await connection.commit();
+
+        res.json({
+            success: true,
+            message: 'Etkinliğe başarıyla katıldınız!'
+        });
+
+    } catch (error) {
+        await connection.rollback();
+        console.error('Etkinliğe katılma hatası:', error);
+
+        // Sütun hatası kontrolü (Ad/Soyad vs Ad_Soyad karmaşası için ipucu)
+        let errorMessage = 'İşlem sırasında bir hata oluştu.';
+        if (error.code === 'ER_BAD_FIELD_ERROR') {
+            errorMessage = 'Veritabanı sütun uyuşmazlığı (ad/soyad). Lütfen yöneticiye bildirin.';
+        }
+
+        res.status(500).json({
+            success: false,
+            message: errorMessage,
+            error: error.message
+        });
+    } finally {
+        connection.release();
+    }
+});
+
 module.exports = router;

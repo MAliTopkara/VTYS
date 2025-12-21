@@ -1,0 +1,55 @@
+{
+  "users": [
+    {
+      "id": 4,
+      "ad": "mehdi",
+      "soyad": "şındağ",
+      "email": "mehdi@gmail.com"
+    },
+    {
+      "id": 3,
+      "ad": "Test",
+      "soyad": "User",
+      "email": "testuser@gmail.com"
+    },
+    {
+      "id": 2,
+      "ad": "Lolcü",
+      "soyad": "Selen",
+      "email": "Selen31@hotmail.com"
+    },
+    {
+      "id": 1,
+      "ad": "MEHMET ALİ",
+      "soyad": "TOPKARA",
+      "email": "mehmetalitopkara080@gmail.com"
+    }
+  ],
+  "parts": [
+    {
+      "katilimci_id": 33,
+      "ad_soyad": "",
+      "email": "mehdi@gmail.com"
+    },
+    {
+      "katilimci_id": 32,
+      "ad_soyad": "",
+      "email": "testuser@gmail.com"
+    },
+    {
+      "katilimci_id": 30,
+      "ad_soyad": "Duygu Tunç",
+      "email": "duygu.tunc@email.com"
+    },
+    {
+      "katilimci_id": 29,
+      "ad_soyad": "Kaan Özkan",
+      "email": "kaan.ozkan@email.com"
+    },
+    {
+      "katilimci_id": 28,
+      "ad_soyad": "Sinem Korkmaz",
+      "email": "sinem.korkmaz@email.com"
+    }
+  ]
+}

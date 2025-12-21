@@ -43,31 +43,35 @@ const Navbar = () => {
                                 <i className="bi bi-calendar-event"></i> Etkinlikler
                             </Link>
                         </li>
-                        <li className="nav-item">
-                            <Link className={`nav-link ${isActive('/kategoriler')}`} to="/kategoriler">
-                                <i className="bi bi-tags"></i> Kategoriler
-                            </Link>
-                        </li>
-                        <li className="nav-item">
-                            <Link className={`nav-link ${isActive('/katilimcilar')}`} to="/katilimcilar">
-                                <i className="bi bi-people"></i> Katılımcılar
-                            </Link>
-                        </li>
-                        <li className="nav-item">
-                            <Link className={`nav-link ${isActive('/mekanlar')}`} to="/mekanlar">
-                                <i className="bi bi-geo-alt"></i> Mekanlar
-                            </Link>
-                        </li>
-                        <li className="nav-item">
-                            <Link className={`nav-link ${isActive('/sponsorlar')}`} to="/sponsorlar">
-                                <i className="bi bi-star"></i> Sponsorlar
-                            </Link>
-                        </li>
-                        <li className="nav-item">
-                            <Link className={`nav-link ${isActive('/kayitlar')}`} to="/kayitlar">
-                                <i className="bi bi-clipboard-check"></i> Kayıtlar
-                            </Link>
-                        </li>
+                        {user?.rol === 'admin' && (
+                            <>
+                                <li className="nav-item">
+                                    <Link className={`nav-link ${isActive('/kategoriler')}`} to="/kategoriler">
+                                        <i className="bi bi-tags"></i> Kategoriler
+                                    </Link>
+                                </li>
+                                <li className="nav-item">
+                                    <Link className={`nav-link ${isActive('/katilimcilar')}`} to="/katilimcilar">
+                                        <i className="bi bi-people"></i> Katılımcılar
+                                    </Link>
+                                </li>
+                                <li className="nav-item">
+                                    <Link className={`nav-link ${isActive('/mekanlar')}`} to="/mekanlar">
+                                        <i className="bi bi-geo-alt"></i> Mekanlar
+                                    </Link>
+                                </li>
+                                <li className="nav-item">
+                                    <Link className={`nav-link ${isActive('/sponsorlar')}`} to="/sponsorlar">
+                                        <i className="bi bi-star"></i> Sponsorlar
+                                    </Link>
+                                </li>
+                                <li className="nav-item">
+                                    <Link className={`nav-link ${isActive('/kayitlar')}`} to="/kayitlar">
+                                        <i className="bi bi-clipboard-check"></i> Kayıtlar
+                                    </Link>
+                                </li>
+                            </>
+                        )}
                         <li className="nav-item dropdown">
                             <button
                                 className="btn btn-light dropdown-toggle ms-2"
