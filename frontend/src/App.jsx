@@ -52,8 +52,8 @@ const PublicRoute = ({ children }) => {
   }
 
   if (isAuthenticated) {
-    console.log('PublicRoute: Authenticated, redirecting to /etkinlikler');
-    return <Navigate to="/etkinlikler" replace />;
+    console.log('PublicRoute: Authenticated, redirecting to /');
+    return <Navigate to="/" replace />;
   }
 
   return children;
@@ -65,7 +65,7 @@ const AppLayout = () => {
     <>
       <Navbar />
       <Routes>
-        <Route path="/" element={<Navigate to="/login" />} />
+        <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
         <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
         <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
         <Route path="/etkinlikler" element={<ProtectedRoute><Etkinlikler /></ProtectedRoute>} />
