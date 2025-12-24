@@ -40,7 +40,7 @@ Modern, full-stack etkinlik yönetim web uygulaması. Bu sistem etkinliklerin, k
 
 ## Veritabanı Şeması
 
-Proje **7 tablo** ve **çoka-çok ilişkiler** içerir:
+Proje **8 tablo** ve **4 ilişki** içerir:
 
 1. **kullanicilar** - Kullanıcı bilgileri (admin/user)
 2. **kategoriler** - Etkinlik kategorileri
@@ -49,11 +49,13 @@ Proje **7 tablo** ve **çoka-çok ilişkiler** içerir:
 5. **etkinlikler** - Ana etkinlik tablosu (kategoriler & mekanlar ile ilişkili)
 6. **katilimcilar** - Katılımcı bilgileri
 7. **kayitlar** - Köprü tablo (etkinlikler ↔ katilimcilar)
+8. **etkinlik_sponsorlar** - Köprü tablo (etkinlikler ↔ sponsorlar)
 
 **İlişkiler:**
-- `etkinlikler` → `kategoriler` (Foreign Key)
-- `etkinlikler` → `mekanlar` (Foreign Key)
-- `kayitlar` ↔ `etkinlikler` + `katilimcilar` (Many-to-Many)
+- `kategoriler` (1) → `etkinlikler` (N) - One-to-Many
+- `mekanlar` (1) → `etkinlikler` (N) - One-to-Many
+- `etkinlikler` (M) ↔ `katilimcilar` (N) - Many-to-Many (köprü: kayitlar)
+- `etkinlikler` (M) ↔ `sponsorlar` (N) - Many-to-Many (köprü: etkinlik_sponsorlar)
 
 Detaylı şema: [database.sql](database.sql)
 

@@ -16,6 +16,7 @@ const mekanlarRoutes = require('./routes/mekanlar');
 const sponsorlarRoutes = require('./routes/sponsorlar');
 const kayitlarRoutes = require('./routes/kayitlar');
 const dashboardRoutes = require('./routes/dashboard');
+const etkinlikSponsorlarRoutes = require('./routes/etkinlik_sponsorlar');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -139,6 +140,7 @@ app.use('/api/katilimcilar', katilimcilarRoutes);
 app.use('/api/mekanlar', mekanlarRoutes);
 app.use('/api/sponsorlar', sponsorlarRoutes);
 app.use('/api/kayitlar', kayitlarRoutes);
+app.use('/api/etkinlik-sponsorlar', etkinlikSponsorlarRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 
 

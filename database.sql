@@ -152,6 +152,41 @@ CREATE INDEX idx_kayit_etkinlik ON kayitlar(etkinlik_id);
 CREATE INDEX idx_kayit_katilimci ON kayitlar(katilimci_id);
 CREATE INDEX idx_kayit_tarihi ON kayitlar(kayit_tarihi);
 
+-- -----------------------------------------------------
+-- Tablo: etkinlik_sponsorlar (KÖPRÜ TABLO #2)
+-- Açıklama: Etkinlikler ve sponsorlar arasında çoka-çok ilişki sağlar
+-- Bir etkinliğin birden fazla sponsoru olabilir
+-- Bir sponsor birden fazla etkinliği destekleyebilir
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS etkinlik_sponsorlar (
+    id SERIAL PRIMARY KEY,
+    etkinlik_id INTEGER NOT NULL,
+    sponsor_id INTEGER NOT NULL,
+    katki_miktari DECIMAL(10, 2) DEFAULT 0.00,
+    katki_turu VARCHAR(50) DEFAULT 'Maddi',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    -- Foreign Key İlişkileri
+    CONSTRAINT fk_etkinlik_sponsor_etkinlik
+        FOREIGN KEY (etkinlik_id)
+        REFERENCES etkinlikler(etkinlik_id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+
+    CONSTRAINT fk_etkinlik_sponsor_sponsor
+        FOREIGN KEY (sponsor_id)
+        REFERENCES sponsorlar(sponsor_id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+
+    -- Aynı sponsor aynı etkinliğe birden fazla kez eklenemez
+    CONSTRAINT unique_etkinlik_sponsor
+        UNIQUE (etkinlik_id, sponsor_id)
+);
+
+CREATE INDEX idx_etkinlik_sponsor_etkinlik ON etkinlik_sponsorlar(etkinlik_id);
+CREATE INDEX idx_etkinlik_sponsor_sponsor ON etkinlik_sponsorlar(sponsor_id);
+
 -- =====================================================
 -- VERİTABANI İLİŞKİLERİ AÇIKLAMASI
 -- =====================================================
@@ -167,13 +202,16 @@ CREATE INDEX idx_kayit_tarihi ON kayitlar(kayit_tarihi);
 --    Bir etkinliğe birden fazla katılımcı kayıt olabilir
 --    Bir katılımcı birden fazla etkinliğe kayıt olabilir
 --
--- 4. kullanicilar
+-- 4. etkinlikler (N) <--> (M) sponsorlar
+--    Çoka-çok ilişki - etkinlik_sponsorlar tablosu köprü görevi görür
+--    Bir etkinliğin birden fazla sponsoru olabilir
+--    Bir sponsor birden fazla etkinliği destekleyebilir
+--
+-- 5. kullanicilar
 --    Sistem kullanıcılarını tutar (admin/user rolleri)
 --
--- 5. sponsorlar
---    Etkinlik sponsorlarını tutar (gelecekte etkinliklerle ilişkilendirilebilir)
---
 -- =====================================================
--- TABLO SAYISI: 7
--- İLİŞKİLİ TABLO SAYISI: 5 (kategoriler, mekanlar, etkinlikler, katilimcilar, kayitlar)
+-- TABLO SAYISI: 8
+-- İLİŞKİLİ TABLO SAYISI: 7 (kategoriler, mekanlar, etkinlikler, katilimcilar, kayitlar, sponsorlar, etkinlik_sponsorlar)
+-- İLİŞKİ SAYISI: 4 (2x One-to-Many + 2x Many-to-Many)
 -- =====================================================
