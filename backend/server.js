@@ -9,6 +9,7 @@ const { pool, testConnection } = require('./db');
 
 // Route dosyalarını import et
 const authRoutes = require('./routes/auth');
+const kullanicilarRoutes = require('./routes/kullanicilar');
 const etkinliklerRoutes = require('./routes/etkinlikler');
 const kategorilerRoutes = require('./routes/kategoriler');
 const katilimcilarRoutes = require('./routes/katilimcilar');
@@ -134,6 +135,7 @@ app.get('/api/health', async (req, res) => {
 
 // API Route'ları tanımla
 app.use('/api/auth', authRoutes);
+app.use('/api/kullanicilar', kullanicilarRoutes);
 app.use('/api/etkinlikler', etkinliklerRoutes);
 app.use('/api/kategoriler', kategorilerRoutes);
 app.use('/api/katilimcilar', katilimcilarRoutes);

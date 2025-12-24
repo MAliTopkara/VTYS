@@ -54,6 +54,14 @@ export const dashboardService = {
     getStats: () => api.get('/dashboard')
 };
 
+// Kullanıcı servisleri
+export const kullaniciService = {
+    getAll: () => api.get('/kullanicilar'),
+    getById: (id) => api.get(`/kullanicilar/${id}`),
+    updateRole: (id, rol) => api.put(`/kullanicilar/${id}/rol`, { rol }),
+    delete: (id) => api.delete(`/kullanicilar/${id}`)
+};
+
 // Etkinlik servisleri
 export const etkinlikService = {
     getAll: () => api.get('/etkinlikler'),

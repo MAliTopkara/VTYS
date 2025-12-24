@@ -70,6 +70,11 @@ const Navbar = () => {
                                         <i className="bi bi-clipboard-check"></i> Kayıtlar
                                     </Link>
                                 </li>
+                                <li className="nav-item">
+                                    <Link className={`nav-link ${isActive('/kullanicilar')}`} to="/kullanicilar">
+                                        <i className="bi bi-people-fill"></i> Kullanıcılar
+                                    </Link>
+                                </li>
                             </>
                         )}
                         <li className="nav-item dropdown">

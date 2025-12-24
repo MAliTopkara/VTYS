@@ -10,6 +10,7 @@ import Katilimcilar from './pages/Katilimcilar';
 import Mekanlar from './pages/Mekanlar';
 import Sponsorlar from './pages/Sponsorlar';
 import Kayitlar from './pages/Kayitlar';
+import Kullanicilar from './pages/Kullanicilar';
 
 // Protected Route component
 const ProtectedRoute = ({ children }) => {
@@ -74,6 +75,7 @@ const AppLayout = () => {
         <Route path="/mekanlar" element={<ProtectedRoute><Mekanlar /></ProtectedRoute>} />
         <Route path="/sponsorlar" element={<ProtectedRoute><Sponsorlar /></ProtectedRoute>} />
         <Route path="/kayitlar" element={<ProtectedRoute><Kayitlar /></ProtectedRoute>} />
+        <Route path="/kullanicilar" element={<ProtectedRoute><Kullanicilar /></ProtectedRoute>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </>
